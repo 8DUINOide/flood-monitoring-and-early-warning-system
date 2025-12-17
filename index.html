@@ -19,10 +19,10 @@
     <div id="map"></div>
 </div>
 
-<!-- Left slide-in menu (hamburger) -->
+<!-- Left slide-in menu -->
 <div id="left-menu" class="menu-hidden">
     <div class="menu-header">
-        <h3>Settings</h3>
+        <h3>Naga Flood Simulator</h3>
         <button onclick="toggleMenu()" class="close-menu">&times;</button>
     </div>
     <div class="menu-search">
@@ -30,22 +30,32 @@
         <button onclick="searchLocation()"><i class="fa-solid fa-search"></i></button>
     </div>
     <div class="menu-section">
-        <h4>Barangays (1-27) <span onclick="toggleBarangayList()">&#9660;</span></h4>
+        <h4><i class="fa-solid fa-list"></i> Barangays (1-27) <span onclick="toggleBarangayList()">&#9660;</span></h4>
         <ul id="barangay-list"></ul>
     </div>
     <div class="menu-section">
-        <h4>Filters</h4>
-        <button onclick="filterBarangays('all')">All</button>
-        <button onclick="filterBarangays('green')">Green</button>
-        <button onclick="filterBarangays('yellow')">Yellow</button>
-        <button onclick="filterBarangays('red')">Red</button>
+        <h4><i class="fa-solid fa-circle-info"></i> Flood Alert Legend</h4>
+        <div class="legend">
+            <div class="legend-item"><span class="legend-color green"></span> Green: Safe - Continue monitoring</div>
+            <div class="legend-item"><span class="legend-color yellow"></span> Yellow: Prepare - Secure belongings & be ready</div>
+            <div class="legend-item"><span class="legend-color red"></span> Red: Critical - Evacuate immediately</div>
+        </div>
     </div>
     <div class="menu-section">
-        <button onclick="toggleLayers()"><i class="fa-solid fa-layer-group"></i> Toggle Layers</button>
+        <h4><i class="fa-solid fa-play-circle"></i> Simulation Controls</h4>
+        <div class="sim-controls">
+            <button onclick="startSimulation()" id="start-btn">Start Simulation</button>
+            <button onclick="pauseSimulation()" id="pause-btn" disabled>Pause</button>
+            <button onclick="resetSimulation()" id="reset-btn" disabled>Reset</button>
+            <div class="speed-control">
+                <label>Speed: </label>
+                <input type="range" id="sim-speed" min="1" max="10" value="5" disabled>
+            </div>
+        </div>
     </div>
 </div>
 
-<!-- Right details sidebar (on click) -->
+<!-- Right details sidebar -->
 <div id="flood-sidebar" class="sidebar-hidden">
     <div class="sidebar-header">
         <h2 id="sidebar-title">Details</h2>

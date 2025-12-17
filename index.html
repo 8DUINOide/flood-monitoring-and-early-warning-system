@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Naga City Flood Monitoring</title>
+    <link rel="icon" type="image/png" href="images/logo.png">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <script src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js"></script>
+    <link href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<!-- Top-left hamburger -->
+<button id="hamburger" onclick="toggleMenu()"><i class="fa-solid fa-bars"></i></button>
+
+<!-- Full-screen map -->
+<div id="map-container">
+    <div id="map"></div>
+</div>
+
+<!-- Left slide-in menu (hamburger) -->
+<div id="left-menu" class="menu-hidden">
+    <div class="menu-header">
+        <h3>Settings</h3>
+        <button onclick="toggleMenu()" class="close-menu">&times;</button>
+    </div>
+    <div class="menu-search">
+        <input id="map-search-input" type="text" placeholder="Search in Naga...">
+        <button onclick="searchLocation()"><i class="fa-solid fa-search"></i></button>
+    </div>
+    <div class="menu-section">
+        <h4>Barangays (1-27) <span onclick="toggleBarangayList()">&#9660;</span></h4>
+        <ul id="barangay-list"></ul>
+    </div>
+    <div class="menu-section">
+        <h4>Filters</h4>
+        <button onclick="filterBarangays('all')">All</button>
+        <button onclick="filterBarangays('green')">Green</button>
+        <button onclick="filterBarangays('yellow')">Yellow</button>
+        <button onclick="filterBarangays('red')">Red</button>
+    </div>
+    <div class="menu-section">
+        <button onclick="toggleLayers()"><i class="fa-solid fa-layer-group"></i> Toggle Layers</button>
+    </div>
+</div>
+
+<!-- Right details sidebar (on click) -->
+<div id="flood-sidebar" class="sidebar-hidden">
+    <div class="sidebar-header">
+        <h2 id="sidebar-title">Details</h2>
+        <button onclick="closeFloodSidebar()" class="close-btn">&times;</button>
+    </div>
+    <div id="sidebar-content"></div>
+</div>
+
+<div id="toast" class="toast" style="display: none;"></div>
+
+<script src="data.js"></script>
+<script src="script.js"></script>
+</body>
+</html>

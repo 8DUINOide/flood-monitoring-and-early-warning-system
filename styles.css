@@ -294,3 +294,9 @@ body, html {
     #left-menu { left: -100%; }
     .menu-visible { left: 0 !important; }
 }
+
+#barangay-list li.list-highlight {
+    background-color: #e0f2fe !important;
+    border-left: 4px solid #003A6C;
+    font-weight: bold;
+}

@@ -1,7 +1,8 @@
 // Globals
 let map, barangayMarkers = [], highlightedMarker = null, highlightedFeatureId = null;
-const MAPBOX_TOKEN = 'pk.eyJ1IjoiYWxmcmFuY2lzYnA0IiwiYSI6ImNtajloOW4zYzBjYTAzZHNiaHVuc2V1dWUifQ.m_UdZu36KHAKXu8-3TXElQ';
+let highlightedListItem = null; // Track currently highlighted list item
 
+const MAPBOX_TOKEN = 'pk.eyJ1IjoiYWxmcmFuY2lzYnA0IiwiYSI6ImNtajloOW4zYzBjYTAzZHNiaHVuc2V1dWUifQ.m_UdZu36KHAKXu8-3TXElQ';
 const BARANGAY_COLORS = {
     'abella': '#FFB6C1',
     'bagumbayan_norte': '#98FB98',
@@ -40,7 +41,6 @@ document.addEventListener('DOMContentLoaded', () => {
 function initMap() {
     mapboxgl.accessToken = MAPBOX_TOKEN;
     const { NAGA_CITY_CENTER, weatherStations } = window.NAGA_DATA;
-
     map = new mapboxgl.Map({
         container: 'map',
         style: 'mapbox://styles/mapbox/outdoors-v12',
@@ -59,7 +59,6 @@ function initMap() {
                 });
 
                 map.addSource('barangays', { type: 'geojson', data: geojson });
-
                 map.addLayer({
                     id: 'barangay-boundaries',
                     type: 'fill',
@@ -69,7 +68,6 @@ function initMap() {
                         'fill-opacity': 0.2
                     }
                 });
-
                 map.addLayer({
                     id: 'barangay-outlines',
                     type: 'line',
@@ -81,7 +79,7 @@ function initMap() {
                     }
                 });
 
-                // Fit map exactly to Naga City boundaries
+                // Fit map to Naga City
                 const bounds = new mapboxgl.LngLatBounds();
                 geojson.features.forEach(feature => {
                     const coords = feature.geometry.coordinates;
@@ -101,17 +99,23 @@ function initMap() {
         map.addControl(new mapboxgl.FullscreenControl());
         map.addControl(new mapboxgl.ScaleControl({ unit: 'metric' }), 'bottom-right');
 
+        // Add barangay markers
         window.NAGA_DATA.barangays.forEach((barangay, index) => {
             const id = index + 1;
             const color = BARANGAY_COLORS[barangay.id] || '#808080';
             const marker = new mapboxgl.Marker({ color })
                 .setLngLat([barangay.lng, barangay.lat])
                 .addTo(map);
+
             marker.getElement().classList.add('barangay-marker');
-            marker.getElement().addEventListener('click', () => selectBarangay(barangay, marker, id, barangay.id));
-            barangayMarkers.push({ marker, data: barangay, id, featureId: barangay.id, color });
+            marker.getElement().addEventListener('click', () => {
+                selectBarangay(barangay, marker, id, barangay.id);
+            });
+
+            barangayMarkers.push({ marker, data: barangay, id, featureId: barangay.id, color, listIndex: index });
         });
 
+        // Add weather stations
         weatherStations.forEach(station => {
             const el = document.createElement('div');
             el.className = 'station-marker';
@@ -123,33 +127,71 @@ function initMap() {
     });
 }
 
-function selectBarangay(barangay, marker, id, featureId) {
+// Main selection function - called from both marker click and list click
+function selectBarangay(barangay, marker, id, featureId, fromList = false) {
+    // Fly to location
     map.flyTo({ center: [barangay.lng, barangay.lat], zoom: 15, duration: 1000 });
 
-    if (highlightedMarker) {
-        highlightedMarker.marker.getElement().classList.remove('highlight');
-        highlightedMarker.marker.getElement().style.backgroundColor = highlightedMarker.color;
-    }
-    if (highlightedFeatureId) {
-        map.setPaintProperty('barangay-boundaries', 'fill-opacity', 0.2);
-        map.setPaintProperty('barangay-outlines', 'line-width', 1);
-    }
+    // Reset previous highlights
+    resetHighlights();
 
+    // Highlight marker
     if (marker) {
         marker.getElement().classList.add('highlight');
         marker.getElement().style.backgroundColor = '#FFD700';
-        highlightedMarker = { marker, color: marker.getElement().style.backgroundColor };
+        highlightedMarker = { marker, originalColor: BARANGAY_COLORS[featureId] || '#808080' };
     }
 
-    map.setPaintProperty('barangay-boundaries', 'fill-opacity', ['case', ['==', ['get', 'id'], featureId], 0.6, 0.2]);
+    // Highlight polygon
     const brighter = brightenColor(BARANGAY_COLORS[featureId] || '#808080');
-    map.setPaintProperty('barangay-boundaries', 'fill-color', ['case', ['==', ['get', 'id'], featureId], brighter, ['get', 'color']]);
-    map.setPaintProperty('barangay-outlines', 'line-width', ['case', ['==', ['get', 'id'], featureId], 3, 1]);
-    map.setPaintProperty('barangay-outlines', 'line-color', ['case', ['==', ['get', 'id'], featureId], '#003A6C', ['get', 'color']]);
+    map.setPaintProperty('barangay-boundaries', 'fill-opacity', ['case', ['==', ['get', 'name'], barangay.name], 0.6, 0.2]);
+    map.setPaintProperty('barangay-boundaries', 'fill-color', ['case', ['==', ['get', 'name'], barangay.name], brighter, ['get', 'color']]);
+    map.setPaintProperty('barangay-outlines', 'line-width', ['case', ['==', ['get', 'name'], barangay.name], 3, 1]);
+    map.setPaintProperty('barangay-outlines', 'line-color', ['case', ['==', ['get', 'name'], barangay.name], '#003A6C', ['get', 'color']]);
+
     highlightedFeatureId = featureId;
 
+    // Highlight list item
+    const listItems = document.querySelectorAll('#barangay-list li');
+    const targetIndex = window.NAGA_DATA.barangays.findIndex(b => b.id === barangay.id);
+    if (targetIndex !== -1) {
+        const listItem = listItems[targetIndex];
+        listItem.classList.add('list-highlight');
+        listItem.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        highlightedListItem = listItem;
+    }
+
+    // Show sidebar details
     showFloodSidebar(barangay, id, BARANGAY_COLORS[featureId] || '#808080');
-    toggleMenu(true);
+
+    // Auto-open menu if clicking from map
+    if (!fromList) {
+        toggleMenu(true);
+    }
+}
+
+function resetHighlights() {
+    // Reset marker
+    if (highlightedMarker) {
+        highlightedMarker.marker.getElement().classList.remove('highlight');
+        highlightedMarker.marker.getElement().style.backgroundColor = highlightedMarker.originalColor;
+        highlightedMarker = null;
+    }
+
+    // Reset polygon
+    if (highlightedFeatureId || map.getLayer('barangay-boundaries')) {
+        map.setPaintProperty('barangay-boundaries', 'fill-opacity', 0.2);
+        map.setPaintProperty('barangay-boundaries', 'fill-color', ['get', 'color']);
+        map.setPaintProperty('barangay-outlines', 'line-width', 1);
+        map.setPaintProperty('barangay-outlines', 'line-color', ['get', 'color']);
+        highlightedFeatureId = null;
+    }
+
+    // Reset list item
+    if (highlightedListItem) {
+        highlightedListItem.classList.remove('list-highlight');
+        highlightedListItem = null;
+    }
 }
 
 function brightenColor(hex) {
@@ -175,16 +217,7 @@ function showFloodSidebar(barangay, id, color) {
 
 function closeFloodSidebar() {
     document.getElementById('flood-sidebar').classList.remove('sidebar-visible');
-    if (highlightedMarker) {
-        highlightedMarker.marker.getElement().classList.remove('highlight');
-        highlightedMarker.marker.getElement().style.backgroundColor = highlightedMarker.color;
-        highlightedMarker = null;
-    }
-    if (highlightedFeatureId) {
-        map.setPaintProperty('barangay-boundaries', 'fill-opacity', 0.2);
-        map.setPaintProperty('barangay-outlines', 'line-width', 1);
-        highlightedFeatureId = null;
-    }
+    resetHighlights();
 }
 
 function toggleMenu(open = null) {
@@ -202,11 +235,20 @@ function generateBarangayList() {
     list.classList.add('hidden');
     const { barangays } = window.NAGA_DATA;
     list.innerHTML = '';
+
     barangays.forEach((b, i) => {
         const li = document.createElement('li');
         const color = BARANGAY_COLORS[b.id] || '#808080';
         li.innerHTML = `<span class="number">${i+1}</span><div class="color-dot" style="background: ${color};"></div><span>${b.name}</span>`;
-        li.onclick = (e) => { e.stopPropagation(); selectBarangay(b, null, i+1, b.id); };
+
+        li.onclick = (e) => {
+            e.stopPropagation();
+            const markerData = barangayMarkers.find(m => m.data.id === b.id);
+            if (markerData) {
+                selectBarangay(b, markerData.marker, i+1, b.id, true); // true = from list
+            }
+        };
+
         list.appendChild(li);
     });
 }

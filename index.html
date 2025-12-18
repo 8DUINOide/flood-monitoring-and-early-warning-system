@@ -13,12 +13,10 @@
 <body>
 <!-- Top-left hamburger -->
 <button id="hamburger" onclick="toggleMenu()"><i class="fa-solid fa-bars"></i></button>
-
 <!-- Full-screen map -->
 <div id="map-container">
     <div id="map"></div>
 </div>
-
 <!-- Left slide-in menu -->
 <div id="left-menu" class="menu-hidden">
     <div class="menu-header">
@@ -42,6 +40,14 @@
         </div>
     </div>
     <div class="menu-section">
+        <h4><i class="fa-solid fa-map-marked-alt"></i> Map Features Legend</h4>
+        <div class="legend">
+            <div class="legend-item"><span class="legend-color" style="background: #1E90FF;"></span> Waterways: Blue lines/areas for rivers & water bodies (shows downhill flow in terrain)</div>
+            <div class="legend-item"><span class="legend-color" style="background: #A9A9A9;"></span> Hillshade: Shaded relief for terrain shadows (darker = steeper slopes)</div>
+            <div class="legend-item"><span class="legend-color" style="background: #8B4513;"></span> Contours: Brown lines for elevation levels (tilt map for 3D view to estimate heights)</div>
+        </div>
+    </div>
+    <div class="menu-section">
         <h4><i class="fa-solid fa-play-circle"></i> Simulation Controls</h4>
         <div class="sim-controls">
             <button onclick="startSimulation()" id="start-btn">Start Simulation</button>
@@ -53,8 +59,15 @@
             </div>
         </div>
     </div>
+    <div class="menu-section">
+        <h4><i class="fa-solid fa-map"></i> Basemap</h4>
+        <div class="basemap-controls">
+            <button onclick="setBasemap('outdoors')">Outdoors</button>
+            <button onclick="setBasemap('streets')">Streets</button>
+            <button onclick="setBasemap('satellite')">Satellite</button>
+        </div>
+    </div>
 </div>
-
 <!-- Right details sidebar -->
 <div id="flood-sidebar" class="sidebar-hidden">
     <div class="sidebar-header">
@@ -63,9 +76,7 @@
     </div>
     <div id="sidebar-content"></div>
 </div>
-
 <div id="toast" class="toast" style="display: none;"></div>
-
 <script src="data.js"></script>
 <script src="script.js"></script>
 </body>

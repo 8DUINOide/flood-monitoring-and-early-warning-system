@@ -32,7 +32,13 @@ const BARANGAY_COLORS = {
     'tinago': '#B0E0E6',
     'triangulo': '#FF69B4'
 };
+let simulationRunning = false;
+let simulationInterval = null;
+let currentTime = 0; // minutes
+let statuses = [...window.NAGA_DATA.initialStatuses]; // copy
 document.addEventListener('DOMContentLoaded', async () => {
+    // Fake localStorage token for simulation (as per your request)
+    localStorage.setItem('sim_token', 'fake_token_for_local_sim');
     // Fetch GeoJSON once
     try {
         const res = await fetch('https://raw.githubusercontent.com/faeldon/philippines-json-maps/master/2023/geojson/barangays/lowres/barangays-munic-050260000.geojson');
@@ -41,6 +47,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             const name = feature.properties.name.toLowerCase().replace(/\s+/g, '_');
             feature.properties.color = BARANGAY_COLORS[name] || '#808080';
             feature.properties.status = 'green';
+            feature.properties.statusColor = window.NAGA_DATA.STATUS_COLORS.green.primary;
         });
     } catch (err) {
         console.error('GeoJSON load error:', err);
@@ -89,7 +96,7 @@ function addCustomLayers() {
             type: 'fill',
             source: 'barangays',
             paint: {
-                'fill-color': ['get', 'color'],
+                'fill-color': ['get', 'statusColor'],
                 'fill-opacity': 0.2
             }
         });
@@ -175,7 +182,7 @@ function selectBarangay(barangay, marker, id, featureId, fromList = false) {
     // Highlight polygon
     const brighter = brightenColor(BARANGAY_COLORS[featureId] || '#808080');
     map.setPaintProperty('barangay-boundaries', 'fill-opacity', ['case', ['==', ['get', 'name'], barangay.name], 0.6, 0.2]);
-    map.setPaintProperty('barangay-boundaries', 'fill-color', ['case', ['==', ['get', 'name'], barangay.name], brighter, ['get', 'color']]);
+    map.setPaintProperty('barangay-boundaries', 'fill-color', ['case', ['==', ['get', 'name'], barangay.name], brighter, ['get', 'statusColor']]);
     map.setPaintProperty('barangay-outlines', 'line-width', ['case', ['==', ['get', 'name'], barangay.name], 3, 1]);
     map.setPaintProperty('barangay-outlines', 'line-color', ['case', ['==', ['get', 'name'], barangay.name], '#003A6C', ['get', 'color']]);
     highlightedFeatureId = featureId;
@@ -205,7 +212,7 @@ function resetHighlights() {
     // Reset polygon
     if (highlightedFeatureId || map.getLayer('barangay-boundaries')) {
         map.setPaintProperty('barangay-boundaries', 'fill-opacity', 0.2);
-        map.setPaintProperty('barangay-boundaries', 'fill-color', ['get', 'color']);
+        map.setPaintProperty('barangay-boundaries', 'fill-color', ['get', 'statusColor']);
         map.setPaintProperty('barangay-outlines', 'line-width', 1);
         map.setPaintProperty('barangay-outlines', 'line-color', ['get', 'color']);
         highlightedFeatureId = null;
@@ -224,16 +231,24 @@ function brightenColor(hex) {
 }
 function showFloodSidebar(barangay, id, color) {
     document.getElementById('sidebar-title').textContent = `${barangay.name} (#${id})`;
+    updateSidebar(barangay);
+    document.getElementById('flood-sidebar').classList.add('sidebar-visible');
+}
+function updateSidebar(barangay) {
+    const status = statuses.find(s => s.barangayId === barangay.id);
+    const statusColor = window.NAGA_DATA.STATUS_COLORS[status.status].primary;
+    const badgeClass = `status-${status.status}`;
+    const label = window.NAGA_DATA.STATUS_COLORS[status.status].label;
+    const action = window.NAGA_DATA.ALERT_ACTIONS[status.alertLevel];
     document.getElementById('sidebar-content').innerHTML = `
-        <h3>Status: <span class="status-badge status-green">GREEN</span></h3>
-        <div class="info-row"><span>Water Level:</span> <span>0 m</span></div>
-        <div class="info-row"><span>Rainfall:</span> <span>0 mm/hr</span></div>
+        <h3>Status: <span class="status-badge ${badgeClass}">${label.toUpperCase()}</span></h3>
+        <div class="info-row"><span>Water Level:</span> <span>${status.waterLevel.toFixed(2)} m</span></div>
+        <div class="info-row"><span>Rainfall:</span> <span>${status.rainfallIntensity.toFixed(1)} mm/hr</span></div>
         <div class="info-row"><span>Elevation:</span> <span>${barangay.elevation} m</span></div>
         <div class="info-row"><span>Flood Risk:</span> <span>${barangay.floodRisk}</span></div>
-        <div class="info-row"><span>Color ID:</span> <span><div class="color-swatch" style="background: ${color};"></div>${color}</span></div>
-        <p><strong>Alert:</strong> Safe - Monitor conditions.</p>
+        <div class="info-row"><span>Color ID:</span> <span><div class="color-swatch" style="background: ${BARANGAY_COLORS[barangay.id]};"></div>${BARANGAY_COLORS[barangay.id]}</span></div>
+        <p><strong>Alert:</strong> ${action}</p>
     `;
-    document.getElementById('flood-sidebar').classList.add('sidebar-visible');
 }
 function closeFloodSidebar() {
     document.getElementById('flood-sidebar').classList.remove('sidebar-visible');
@@ -293,7 +308,141 @@ function setBasemap(type) {
     else if (type === 'satellite') style = 'mapbox://styles/mapbox/satellite-streets-v12';
     map.setStyle(style);
 }
-// Placeholder simulation functions
-function startSimulation() { showToast('Simulation will start in future phases'); }
-function pauseSimulation() { }
-function resetSimulation() { }
+function filterByStatus(val) {
+    barangayMarkers.forEach(m => {
+        const status = statuses.find(s => s.barangayId === m.data.id).status;
+        m.marker.getElement().style.display = (val === 'all' || status === val) ? 'block' : 'none';
+    });
+    map.setPaintProperty('barangay-boundaries', 'fill-opacity', ['case', ['==', ['get', 'status'], val], 0.6, val === 'all' ? 0.2 : 0]);
+}
+// Simulation functions
+function startSimulation() {
+    if (simulationRunning) return;
+    simulationRunning = true;
+    document.getElementById('start-btn').disabled = true;
+    document.getElementById('pause-btn').disabled = false;
+    document.getElementById('reset-btn').disabled = false;
+    document.getElementById('sim-speed').disabled = false;
+    runSimulationTick();
+}
+function pauseSimulation() {
+    if (!simulationRunning) return;
+    simulationRunning = false;
+    clearTimeout(simulationInterval);
+    document.getElementById('start-btn').disabled = false;
+    document.getElementById('pause-btn').disabled = true;
+}
+function resetSimulation() {
+    pauseSimulation();
+    currentTime = 0;
+    statuses = [...window.NAGA_DATA.initialStatuses];
+    updateMapStatuses();
+    const sidebar = document.getElementById('flood-sidebar');
+    if (sidebar.classList.contains('sidebar-visible')) {
+        const title = document.getElementById('sidebar-title').textContent;
+        const name = title.split(' (')[0];
+        const barangay = window.NAGA_DATA.barangays.find(b => b.name === name);
+        if (barangay) updateSidebar(barangay);
+    }
+    document.getElementById('reset-btn').disabled = true;
+    document.getElementById('sim-speed').disabled = true;
+    showToast('Simulation reset');
+}
+function runSimulationTick() {
+    const speed = parseInt(document.getElementById('sim-speed').value);
+    const minutesPerTick = speed; // 1-10 minutes per tick
+    currentTime += minutesPerTick;
+    // Update each status
+    statuses.forEach(status => {
+        const barangay = window.NAGA_DATA.barangays.find(b => b.id === status.barangayId);
+        // Simulate rainfall (from LT-208S sensor): increases over time with randomness
+        const baseRain = Math.min(1 + currentTime / 60, 50); // mm/hr, ramps up
+        status.rainfallIntensity = baseRain + Math.random() * 10 - 5;
+        if (status.rainfallIntensity < 0) status.rainfallIntensity = 0;
+        // Water level increase (from LMDS200 sensor): simplified HEC-HMS runoff
+        let deltaWater = status.rainfallIntensity / 100; // mm/hr to m (adjust factor)
+        if (barangay.elevation > 15) deltaWater *= 0.5; // Higher elevation, less accumulation
+        if (!barangay.nearWaterway) deltaWater *= 0.7; // Away from river, less flow
+        deltaWater -= 0.01; // Basic drainage (HEC-RAS inspired)
+        status.waterLevel += deltaWater;
+        if (status.waterLevel < 0) status.waterLevel = 0;
+        // Determine new status based on thresholds
+        let newStatus = 'green';
+        if (status.waterLevel >= window.NAGA_DATA.ALERT_THRESHOLDS.waterLevel.normal) newStatus = 'yellow';
+        if (status.waterLevel >= window.NAGA_DATA.ALERT_THRESHOLDS.waterLevel.critical) newStatus = 'red';
+        // Time-based escalation
+        status.timeInCurrentStatus += minutesPerTick;
+        if (status.status === 'yellow' && status.timeInCurrentStatus > window.NAGA_DATA.ALERT_THRESHOLDS.escalationTime.yellowToRed) {
+            newStatus = 'red';
+        }
+        // Update if changed
+        if (newStatus !== status.status) {
+            status.status = newStatus;
+            status.timeInCurrentStatus = 0;
+            if (newStatus === 'green') status.alertLevel = 'safe';
+            else if (newStatus === 'yellow') status.alertLevel = 'prepare';
+            else if (newStatus === 'red') status.alertLevel = 'evacuate';
+        }
+        // Further escalation for red
+        if (status.status === 'red' && status.timeInCurrentStatus > window.NAGA_DATA.ALERT_THRESHOLDS.escalationTime.redToEvacuate) {
+            status.alertLevel = 'forced_evacuation';
+        }
+        status.timestamp = new Date();
+    });
+    // Simulate river flow (HEC-RAS inspired): for nearWaterway, upstream influences downstream
+    const riverBarangays = window.NAGA_DATA.barangays.filter(b => b.nearWaterway).sort((a, b) => b.lat - a.lat); // Upstream first (higher lat)
+    riverBarangays.forEach((b, index) => {
+        if (index === 0) return; // No inflow for most upstream
+        const upstream = riverBarangays[index - 1];
+        const upStatus = statuses.find(s => s.barangayId === upstream.id);
+        const downStatus = statuses.find(s => s.barangayId === b.id);
+        const flow = upStatus.waterLevel * 0.2; // 20% flow downstream
+        downStatus.waterLevel += flow;
+        // Recalculate status
+        let newStatus = 'green';
+        if (downStatus.waterLevel >= window.NAGA_DATA.ALERT_THRESHOLDS.waterLevel.normal) newStatus = 'yellow';
+        if (downStatus.waterLevel >= window.NAGA_DATA.ALERT_THRESHOLDS.waterLevel.critical) newStatus = 'red';
+        if (newStatus !== downStatus.status) {
+            downStatus.status = newStatus;
+            downStatus.timeInCurrentStatus = 0;
+            if (newStatus === 'green') downStatus.alertLevel = 'safe';
+            else if (newStatus === 'yellow') downStatus.alertLevel = 'prepare';
+            else if (newStatus === 'red') downStatus.alertLevel = 'evacuate';
+        }
+        if (downStatus.status === 'red' && downStatus.timeInCurrentStatus > window.NAGA_DATA.ALERT_THRESHOLDS.escalationTime.redToEvacuate) {
+            downStatus.alertLevel = 'forced_evacuation';
+        }
+    });
+    // Update map and sidebar
+    updateMapStatuses();
+    const sidebar = document.getElementById('flood-sidebar');
+    if (sidebar.classList.contains('sidebar-visible')) {
+        const title = document.getElementById('sidebar-title').textContent;
+        const name = title.split(' (')[0];
+        const barangay = window.NAGA_DATA.barangays.find(b => b.name === name);
+        if (barangay) updateSidebar(barangay);
+    }
+    // Schedule next tick
+    const intervalMs = 1000; // Every second
+    if (simulationRunning) {
+        simulationInterval = setTimeout(runSimulationTick, intervalMs);
+    }
+}
+function updateMapStatuses() {
+    geoData.features.forEach(feature => {
+        const name = feature.properties.name.toLowerCase().replace(/\s+/g, '_');
+        const status = statuses.find(s => s.barangayId === name);
+        if (status) {
+            feature.properties.status = status.status;
+            feature.properties.statusColor = window.NAGA_DATA.STATUS_COLORS[status.status].primary;
+        }
+    });
+    if (map.getSource('barangays')) {
+        map.getSource('barangays').setData(geoData);
+    }
+    // Update markers
+    barangayMarkers.forEach(m => {
+        const status = statuses.find(s => s.barangayId === m.data.id);
+        m.marker.setColor(window.NAGA_DATA.STATUS_COLORS[status.status].primary);
+    });
+}

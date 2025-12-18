@@ -1,3 +1,4 @@
+/* styles.css (minor additions for new elements) */
 body, html {
     margin: 0;
     padding: 0;
@@ -24,6 +25,17 @@ body, html {
     font-size: 16px;
 }
 #hamburger:hover { background: rgba(0, 58, 108, 1); }
+#sim-status {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: rgba(0, 58, 108, 0.9);
+    color: white;
+    padding: 10px;
+    border-radius: 4px;
+    z-index: 1000;
+    font-size: 0.9em;
+}
 #left-menu {
     position: fixed;
     top: 0;
@@ -145,6 +157,7 @@ body, html {
     margin-top: 0.5rem;
     display: flex;
     align-items: center;
+    gap: 5px;
 }
 .speed-control label {
     margin-right: 10px;
@@ -152,6 +165,10 @@ body, html {
 }
 .speed-control input {
     flex: 1;
+}
+#speed-value {
+    min-width: 30px;
+    font-weight: bold;
 }
 .basemap-controls {
     display: flex;
@@ -215,13 +232,29 @@ body, html {
     padding: 1rem;
     color: #333;
 }
-.status-badge {
+.status-badge, .alert-level {
     padding: 0.25rem 0.5rem;
     border-radius: 20px;
     font-weight: bold;
     color: white;
 }
 .status-green { background: #10b981; }
+.status-yellow { background: #f59e0b; }
+.status-red { background: #ef4444; }
+.alert-level {
+    text-transform: uppercase;
+}
+.sensor-section {
+    margin: 1rem 0;
+    padding: 0.5rem;
+    border: 1px solid #eee;
+    border-radius: 4px;
+}
+.sensor-section h4 {
+    margin: 0 0 0.5rem;
+    font-size: 1em;
+    color: #003A6C;
+}
 .info-row {
     display: flex;
     justify-content: space-between;
@@ -235,16 +268,6 @@ body, html {
     border: 1px solid #ccc;
     display: inline-block;
     margin-left: 0.5rem;
-}
-.barangay-marker {
-    width: 24px;
-    height: 24px;
-    cursor: pointer;
-    transition: transform 0.3s, box-shadow 0.3s;
-}
-.barangay-marker.highlight {
-    transform: scale(1.5);
-    box-shadow: 0 0 15px rgba(255, 215, 0, 0.8);
 }
 #toast {
     position: fixed;

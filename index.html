@@ -28,6 +28,15 @@
         <button onclick="searchLocation()"><i class="fa-solid fa-search"></i></button>
     </div>
     <div class="menu-section">
+        <h4><i class="fa-solid fa-filter"></i> Filter by Status</h4>
+        <select id="status-filter" onchange="filterByStatus(this.value)">
+            <option value="all">All</option>
+            <option value="green">Green</option>
+            <option value="yellow">Yellow</option>
+            <option value="red">Red</option>
+        </select>
+    </div>
+    <div class="menu-section">
         <h4><i class="fa-solid fa-list"></i> Barangays (1-27) <span onclick="toggleBarangayList()">&#9660;</span></h4>
         <ul id="barangay-list"></ul>
     </div>

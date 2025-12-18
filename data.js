@@ -58,10 +58,17 @@ const initialStatuses = barangays.map(b => ({
   barangayId: b.id,
   status: 'green',
   alertLevel: 'safe',
-  waterLevel: 0, // in meters
-  rainfallIntensity: 0, // mm/hr
+  waterLevel: 0.08, // in meters
+  rainfallIntensity: 0.7, // mm/hr
   timestamp: new Date(),
-  timeInCurrentStatus: 0 // minutes
+  timeInCurrentStatus: 0, // minutes
+  distanceToWater: 0.306,
+  soilMoisture: 55,
+  airTemp: 28.3,
+  humidity: 84,
+  atmPressure: 1018,
+  windSpeed: 5.4,
+  windDirection: 185
 }));
 // Alert thresholds based on HEC-HMS/HEC-RAS parameters
 const ALERT_THRESHOLDS = {

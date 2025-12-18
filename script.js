@@ -240,15 +240,79 @@ function updateSidebar(barangay) {
     const badgeClass = `status-${status.status}`;
     const label = window.NAGA_DATA.STATUS_COLORS[status.status].label;
     const action = window.NAGA_DATA.ALERT_ACTIONS[status.alertLevel];
+    const color = BARANGAY_COLORS[barangay.id];
     document.getElementById('sidebar-content').innerHTML = `
-        <h3>Status: <span class="status-badge ${badgeClass}">${label.toUpperCase()}</span></h3>
-        <div class="info-row"><span>Water Level:</span> <span>${status.waterLevel.toFixed(2)} m</span></div>
-        <div class="info-row"><span>Rainfall:</span> <span>${status.rainfallIntensity.toFixed(1)} mm/hr</span></div>
+        <h3>Status: <span class="status-badge ${badgeClass}">${status.status.toUpperCase()}</span></h3>
+        <div class="info-row"><span>Alert Level:</span> <span>${label}</span></div>
+        <div class="info-row"><span>Recommended Action:</span> <span>${action}</span></div>
+        <div class="sensor-section">
+            <h4>≡ Flood Sensors (LMDS200 & Weather)</h4>
+            <div class="info-row"><span>Water Level:</span> <span class="editable" data-field="waterLevel">${status.waterLevel.toFixed(2)} m</span></div>
+            <div class="info-row"><span>Distance to Water (LMDS200):</span> <span class="editable" data-field="distanceToWater">${status.distanceToWater.toFixed(3)} m</span></div>
+            <div class="info-row"><span>Rainfall Intensity:</span> <span class="editable" data-field="rainfallIntensity">${status.rainfallIntensity.toFixed(1)} mm/hr</span></div>
+            <div class="info-row"><span>Soil Moisture:</span> <span class="editable" data-field="soilMoisture">${status.soilMoisture} %</span></div>
+        </div>
+        <div class="sensor-section">
+            <h4>☁ Weather Sensors (LT-208S)</h4>
+            <div class="info-row"><span>Air Temperature:</span> <span class="editable" data-field="airTemp">${status.airTemp.toFixed(1)} °C</span></div>
+            <div class="info-row"><span>Humidity:</span> <span class="editable" data-field="humidity">${status.humidity} %RH</span></div>
+            <div class="info-row"><span>Atmospheric Pressure:</span> <span class="editable" data-field="atmPressure">${status.atmPressure} hPa</span></div>
+            <div class="info-row"><span>Wind Speed:</span> <span class="editable" data-field="windSpeed">${status.windSpeed.toFixed(1)} m/s</span></div>
+            <div class="info-row"><span>Wind Direction:</span> <span class="editable" data-field="windDirection">${status.windDirection} °</span></div>
+        </div>
         <div class="info-row"><span>Elevation:</span> <span>${barangay.elevation} m</span></div>
         <div class="info-row"><span>Flood Risk:</span> <span>${barangay.floodRisk}</span></div>
-        <div class="info-row"><span>Color ID:</span> <span><div class="color-swatch" style="background: ${BARANGAY_COLORS[barangay.id]};"></div>${BARANGAY_COLORS[barangay.id]}</span></div>
-        <p><strong>Alert:</strong> ${action}</p>
+        <div class="info-row"><span>Base Color ID:</span> <span><div class="color-swatch" style="background: ${color};"></div>${color}</span></div>
+        <div class="info-row"><span>Last Update:</span> <span>${status.timestamp.toLocaleTimeString()}</span></div>
+        <button id="edit-save-btn" class="edit-btn">Edit</button>
     `;
+    document.getElementById('edit-save-btn').onclick = () => toggleEdit(barangay);
+}
+function toggleEdit(barangay) {
+    const btn = document.getElementById('edit-save-btn');
+    const status = statuses.find(s => s.barangayId === barangay.id);
+    if (btn.textContent === 'Edit') {
+        btn.textContent = 'Save';
+        document.querySelectorAll('#sidebar-content .editable').forEach(span => {
+            const field = span.dataset.field;
+            const text = span.textContent;
+            const value = parseFloat(text.match(/[\d.-]+/)[0]);
+            const unit = text.replace(/[\d.-]+/, '').trim();
+            span.innerHTML = `<input class="edit-input" type="number" step="0.01" value="${value}">${unit}`;
+        });
+    } else {
+        const updates = {};
+        document.querySelectorAll('#sidebar-content .editable').forEach(span => {
+            const input = span.querySelector('input');
+            if (input) {
+                const field = span.dataset.field;
+                updates[field] = parseFloat(input.value);
+                const unit = span.innerHTML.replace(/<input[^>]*>/, '').replace(input.value, '').trim();
+                span.innerHTML = `${updates[field]}${unit}`;
+            }
+        });
+        Object.assign(status, updates);
+        calculateStatus(status, barangay);
+        updateSidebar(barangay);
+        updateMapStatuses();
+        btn.textContent = 'Edit';
+    }
+}
+function calculateStatus(status, barangay) {
+    let newStatus = 'green';
+    if (status.waterLevel >= window.NAGA_DATA.ALERT_THRESHOLDS.waterLevel.normal) newStatus = 'yellow';
+    if (status.waterLevel >= window.NAGA_DATA.ALERT_THRESHOLDS.waterLevel.critical) newStatus = 'red';
+    if (newStatus !== status.status) {
+        status.status = newStatus;
+        status.timeInCurrentStatus = 0;
+        if (newStatus === 'green') status.alertLevel = 'safe';
+        else if (newStatus === 'yellow') status.alertLevel = 'prepare';
+        else if (newStatus === 'red') status.alertLevel = 'evacuate';
+    }
+    if (status.status === 'red' && status.timeInCurrentStatus > window.NAGA_DATA.ALERT_THRESHOLDS.escalationTime.redToEvacuate) {
+        status.alertLevel = 'forced_evacuation';
+    }
+    status.timestamp = new Date();
 }
 function closeFloodSidebar() {
     document.getElementById('flood-sidebar').classList.remove('sidebar-visible');

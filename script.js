@@ -237,29 +237,31 @@ function showFloodSidebar(barangay, id, color) {
 }
 function updateSidebar(barangay) {
     const status = statuses.find(s => s.barangayId === barangay.id);
-    const statusColor = window.NAGA_DATA.STATUS_COLORS[status.status].primary;
     const badgeClass = `status-${status.status}`;
     const label = window.NAGA_DATA.STATUS_COLORS[status.status].label;
     const action = window.NAGA_DATA.ALERT_ACTIONS[status.alertLevel];
-    const color = BARANGAY_COLORS[barangay.id];
+    const actionClass = status.status === 'green' ? 'action-safe' :
+                        status.status === 'yellow' ? 'action-prepare' :
+                        'action-critical';
+    const color = BARANGAY_COLORS[barangay.id] || '#808080';
 
     document.getElementById('sidebar-content').innerHTML = `
         <h3>Status: <span class="status-badge ${badgeClass}">${status.status.toUpperCase()}</span></h3>
 
         <div class="info-section">
-            <div class="info-label">Alert Level:</div>
+            <div class="info-label">Alert Level</div>
             <div class="info-value highlight">${label}</div>
         </div>
 
         <div class="info-section">
-            <div class="info-label">Recommended Action:</div>
-            <div class="info-value action-text">${action}</div>
+            <div class="info-label">Recommended Action</div>
+            <div class="info-value ${actionClass}">${action}</div>
         </div>
 
         <div class="sensor-section">
             <h4>≡ Flood Sensors (LMDS200 & Weather)</h4>
             <div class="info-row"><span>Water Level:</span> <span class="editable" data-field="waterLevel">${status.waterLevel.toFixed(2)} m</span></div>
-            <div class="info-row"><span>Distance to Water (LMDS200):</span> <span class="editable" data-field="distanceToWater">${status.distanceToWater.toFixed(3)} m</span></div>
+            <div class="info-row"><span>Distance to Water:</span> <span class="editable" data-field="distanceToWater">${status.distanceToWater.toFixed(3)} m</span></div>
             <div class="info-row"><span>Rainfall Intensity:</span> <span class="editable" data-field="rainfallIntensity">${status.rainfallIntensity.toFixed(1)} mm/hr</span></div>
             <div class="info-row"><span>Soil Moisture:</span> <span class="editable" data-field="soilMoisture">${status.soilMoisture} %</span></div>
         </div>
@@ -275,7 +277,7 @@ function updateSidebar(barangay) {
 
         <div class="info-row"><span>Elevation:</span> <span>${barangay.elevation} m</span></div>
         <div class="info-row"><span>Flood Risk:</span> <span>${barangay.floodRisk}</span></div>
-        <div class="info-row"><span>Base Color ID:</span> <span><div class="color-swatch" style="background: ${color};"></div>${color}</span></div>
+        <div class="info-row"><span>Base Color ID:</span> <span><div class="color-swatch" style="background: ${color};"></div> ${color}</span></div>
         <div class="info-row"><span>Last Update:</span> <span>${status.timestamp.toLocaleTimeString()}</span></div>
 
         <button id="edit-save-btn" class="edit-btn">Edit</button>

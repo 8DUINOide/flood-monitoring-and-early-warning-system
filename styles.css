@@ -1,5 +1,4 @@
-/* styles.css */
-/* styles.css (minor additions for new elements) */
+/* styles.css - Cleaned UI with better spacing, colors, and hierarchy */
 body, html {
     margin: 0;
     padding: 0;
@@ -26,17 +25,6 @@ body, html {
     font-size: 16px;
 }
 #hamburger:hover { background: rgba(0, 58, 108, 1); }
-#sim-status {
-    position: fixed;
-    top: 20px;
-    right: 20px;
-    background: rgba(0, 58, 108, 0.9);
-    color: white;
-    padding: 10px;
-    border-radius: 4px;
-    z-index: 1000;
-    font-size: 0.9em;
-}
 #left-menu {
     position: fixed;
     top: 0;
@@ -137,40 +125,9 @@ body, html {
     border-radius: 4px;
     margin-right: 10px;
 }
-.legend-color.green { background: #10b981; }
+.legend-color.green { background: #22c55e; }
 .legend-color.yellow { background: #f59e0b; }
 .legend-color.red { background: #ef4444; }
-.sim-controls button {
-    width: 100%;
-    padding: 10px;
-    margin: 0.5rem 0;
-    background: #003A6C;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-}
-.sim-controls button:disabled {
-    background: #aaa;
-    cursor: not-allowed;
-}
-.speed-control {
-    margin-top: 0.5rem;
-    display: flex;
-    align-items: center;
-    gap: 5px;
-}
-.speed-control label {
-    margin-right: 10px;
-    font-size: 0.9em;
-}
-.speed-control input {
-    flex: 1;
-}
-#speed-value {
-    min-width: 30px;
-    font-weight: bold;
-}
 .basemap-controls {
     display: flex;
     gap: 5px;
@@ -185,9 +142,7 @@ body, html {
     cursor: pointer;
     font-size: 0.9em;
 }
-.basemap-controls button:hover {
-    background: #004a8a;
-}
+.basemap-controls button:hover { background: #004a8a; }
 #flood-sidebar {
     position: fixed;
     top: 0;
@@ -202,19 +157,6 @@ body, html {
     box-shadow: -2px 0 10px rgba(0,0,0,0.1);
 }
 .sidebar-visible { right: 0 !important; }
-#flood-sidebar::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    background: rgba(0,0,0,0.5);
-    opacity: 0;
-    transition: opacity 0.3s;
-    z-index: -1;
-}
-.sidebar-visible::before { opacity: 1; }
 .sidebar-header {
     display: flex;
     justify-content: space-between;
@@ -230,45 +172,87 @@ body, html {
     cursor: pointer;
 }
 #sidebar-content {
-    padding: 1rem;
+    padding: 1.2rem;
     color: #333;
 }
-.status-badge, .alert-level {
-    padding: 0.25rem 0.5rem;
-    border-radius: 20px;
+
+/* Status badge - improved colors */
+.status-badge {
+    padding: 0.45rem 0.9rem;
+    border-radius: 9999px;
     font-weight: bold;
     color: white;
-}
-.status-green { background: #10b981; }
-.status-yellow { background: #f59e0b; }
-.status-red { background: #ef4444; }
-.alert-level {
+    font-size: 0.95em;
     text-transform: uppercase;
+    letter-spacing: 0.05em;
+    display: inline-block;
 }
+.status-green { background: #22c55e; } /* Soft green - Safe, reassuring */
+.status-yellow { background: #f59e0b; } /* Amber - Prepare */
+.status-red { background: #ef4444; } /* Strong red - Critical */
+
+/* Clean sections with spacing */
+.info-section {
+    margin: 1.5rem 0;
+    padding: 1rem;
+    background: #f8fafc;
+    border-radius: 8px;
+    border-left: 5px solid #003A6C;
+}
+.info-label {
+    font-weight: bold;
+    color: #003A6C;
+    font-size: 1em;
+    margin-bottom: 0.5rem;
+}
+.info-value {
+    font-size: 1.1em;
+    color: #1e293b;
+    line-height: 1.5;
+}
+.info-value.highlight {
+    font-weight: bold;
+    font-size: 1.2em;
+}
+
+/* Action text - dynamic color matching status */
+.action-safe { color: #22c55e; font-weight: bold; }
+.action-prepare { color: #f59e0b; font-weight: bold; }
+.action-critical { color: #dc2626; font-weight: bold; font-size: 1.15em; }
+
 .sensor-section {
-    margin: 1rem 0;
-    padding: 0.5rem;
-    border: 1px solid #eee;
-    border-radius: 4px;
+    margin: 1.5rem 0;
+    padding: 1rem;
+    background: #f9fafb;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
 }
 .sensor-section h4 {
-    margin: 0 0 0.5rem;
-    font-size: 1em;
+    margin: 0 0 1rem;
+    font-size: 1.1em;
     color: #003A6C;
+    border-bottom: 1px solid #e2e8f0;
+    padding-bottom: 0.5rem;
 }
 .info-row {
     display: flex;
     justify-content: space-between;
-    margin: 0.25rem 0;
-    font-size: 0.9em;
+    align-items: center;
+    margin: 0.75rem 0;
+    font-size: 0.95em;
+}
+.info-row span:first-child {
+    font-weight: 600;
+    color: #334155;
 }
 .color-swatch {
-    width: 20px;
-    height: 20px;
+    width: 22px;
+    height: 22px;
     border-radius: 50%;
     border: 1px solid #ccc;
     display: inline-block;
     margin-left: 0.5rem;
+    vertical-align: middle;
 }
 #toast {
     position: fixed;
@@ -277,7 +261,7 @@ body, html {
     background: #003A6C;
     color: white;
     padding: 1rem;
-    border-radius: 4px;
+    border-radius: 6px;
     z-index: 3000;
     animation: fadeInOut 3s forwards;
 }
@@ -299,51 +283,27 @@ body, html {
 }
 .edit-btn {
     width: 100%;
-    padding: 10px;
-    margin-top: 1rem;
+    padding: 12px;
+    margin: 2rem 0 1rem;
     background: #003A6C;
     color: white;
     border: none;
-    border-radius: 4px;
+    border-radius: 6px;
     cursor: pointer;
+    font-size: 1em;
+    font-weight: bold;
 }
-.edit-btn:hover {
-    background: #004a8a;
-}
+.edit-btn:hover { background: #004a8a; }
 .edit-input {
     width: 80px;
-    padding: 2px;
+    padding: 4px;
     border: 1px solid #ccc;
     border-radius: 4px;
 }
+#barangay-list.hidden { display: none; }
 
-.info-section {
-    margin: 1rem 0;
-    padding: 0.75rem;
-    background: #f8fafc;
-    border-radius: 6px;
-    border-left: 4px solid #003A6C;
-}
-
-.info-label {
-    font-weight: bold;
-    color: #003A6C;
-    margin-bottom: 0.35rem;
-    font-size: 0.95em;
-}
-
-.info-value {
-    font-size: 1.05em;
-    color: #1e293b;
-}
-
-.info-value.highlight {
-    font-weight: bold;
-    color: #0369a1;
-}
-
-.info-value.action-text {
-    font-weight: bold;
-    color: #000000; /* black for all actions */
-    line-height: 1.4;
+/* Fix marker highlight lingering */
+.barangay-marker.highlight {
+    transform: scale(1.3);
+    z-index: 1000;
 }

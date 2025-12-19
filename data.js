@@ -1,3 +1,4 @@
+// data.js
 // 27 Barangays of Naga City, Camarines Sur
 // Coordinates updated with accurate centers from Google Maps (December 2025)
 const NAGA_CITY_CENTER = {
@@ -73,15 +74,12 @@ const initialStatuses = barangays.map(b => ({
 // Alert thresholds based on HEC-HMS/HEC-RAS parameters
 const ALERT_THRESHOLDS = {
   waterLevel: {
-    normal: 0.5, // < 0.5m - Green
-    warning: 1.5, // 0.5-1.5m - Yellow
-    critical: 2.5, // >2.5m - Red (adjusted for clarity)
+    greenToYellow: 0.5,
+    yellowToRed: 1.0,
   },
   rainfall: {
-    light: 2.5, // mm/hr
-    moderate: 7.5, // mm/hr
-    heavy: 15, // mm/hr
-    intense: 30, // mm/hr
+    greenToYellow: 7.5,
+    yellowToRed: 30,
   },
   // Time-based escalation (minutes)
   escalationTime: {

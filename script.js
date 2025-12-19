@@ -1,3 +1,4 @@
+// script.js
 // Globals
 let map, barangayMarkers = [], highlightedMarker = null, highlightedFeatureId = null;
 let highlightedListItem = null; // Track currently highlighted list item
@@ -265,6 +266,14 @@ function updateSidebar(barangay) {
         <div class="info-row"><span>Base Color ID:</span> <span><div class="color-swatch" style="background: ${color};"></div>${color}</span></div>
         <div class="info-row"><span>Last Update:</span> <span>${status.timestamp.toLocaleTimeString()}</span></div>
         <button id="edit-save-btn" class="edit-btn">Edit</button>
+        <div class="menu-section">
+            <h4><i class="fa-solid fa-circle-info"></i> Flood Status Conditions</h4>
+            <div class="legend">
+                <div class="legend-item"><span class="legend-color green"></span> Water <0.5m & Rain <7.5mm/hr</div>
+                <div class="legend-item"><span class="legend-color yellow"></span> Water 0.5-1.0m or Rain 7.5-30mm/hr</div>
+                <div class="legend-item"><span class="legend-color red"></span> Water >1.0m or Rain >30mm/hr</div>
+            </div>
+        </div>
     `;
     document.getElementById('edit-save-btn').onclick = () => toggleEdit(barangay);
 }
@@ -299,9 +308,18 @@ function toggleEdit(barangay) {
     }
 }
 function calculateStatus(status, barangay) {
-    let newStatus = 'green';
-    if (status.waterLevel >= window.NAGA_DATA.ALERT_THRESHOLDS.waterLevel.normal) newStatus = 'yellow';
-    if (status.waterLevel >= window.NAGA_DATA.ALERT_THRESHOLDS.waterLevel.critical) newStatus = 'red';
+    let waterStatus = 'green';
+    if (status.waterLevel >= window.NAGA_DATA.ALERT_THRESHOLDS.waterLevel.greenToYellow) waterStatus = 'yellow';
+    if (status.waterLevel >= window.NAGA_DATA.ALERT_THRESHOLDS.waterLevel.yellowToRed) waterStatus = 'red';
+
+    let rainStatus = 'green';
+    if (status.rainfallIntensity >= window.NAGA_DATA.ALERT_THRESHOLDS.rainfall.greenToYellow) rainStatus = 'yellow';
+    if (status.rainfallIntensity >= window.NAGA_DATA.ALERT_THRESHOLDS.rainfall.yellowToRed) rainStatus = 'red';
+
+    const statusLevels = { green: 0, yellow: 1, red: 2 };
+    const maxLevel = Math.max(statusLevels[waterStatus], statusLevels[rainStatus]);
+    const newStatus = Object.keys(statusLevels).find(key => statusLevels[key] === maxLevel);
+
     if (newStatus !== status.status) {
         status.status = newStatus;
         status.timeInCurrentStatus = 0;
@@ -431,27 +449,8 @@ function runSimulationTick() {
         status.waterLevel += deltaWater;
         if (status.waterLevel < 0) status.waterLevel = 0;
         // Determine new status based on thresholds
-        let newStatus = 'green';
-        if (status.waterLevel >= window.NAGA_DATA.ALERT_THRESHOLDS.waterLevel.normal) newStatus = 'yellow';
-        if (status.waterLevel >= window.NAGA_DATA.ALERT_THRESHOLDS.waterLevel.critical) newStatus = 'red';
-        // Time-based escalation
         status.timeInCurrentStatus += minutesPerTick;
-        if (status.status === 'yellow' && status.timeInCurrentStatus > window.NAGA_DATA.ALERT_THRESHOLDS.escalationTime.yellowToRed) {
-            newStatus = 'red';
-        }
-        // Update if changed
-        if (newStatus !== status.status) {
-            status.status = newStatus;
-            status.timeInCurrentStatus = 0;
-            if (newStatus === 'green') status.alertLevel = 'safe';
-            else if (newStatus === 'yellow') status.alertLevel = 'prepare';
-            else if (newStatus === 'red') status.alertLevel = 'evacuate';
-        }
-        // Further escalation for red
-        if (status.status === 'red' && status.timeInCurrentStatus > window.NAGA_DATA.ALERT_THRESHOLDS.escalationTime.redToEvacuate) {
-            status.alertLevel = 'forced_evacuation';
-        }
-        status.timestamp = new Date();
+        calculateStatus(status, barangay);
     });
     // Simulate river flow (HEC-RAS inspired): for nearWaterway, upstream influences downstream
     const riverBarangays = window.NAGA_DATA.barangays.filter(b => b.nearWaterway).sort((a, b) => b.lat - a.lat); // Upstream first (higher lat)
@@ -463,19 +462,7 @@ function runSimulationTick() {
         const flow = upStatus.waterLevel * 0.2; // 20% flow downstream
         downStatus.waterLevel += flow;
         // Recalculate status
-        let newStatus = 'green';
-        if (downStatus.waterLevel >= window.NAGA_DATA.ALERT_THRESHOLDS.waterLevel.normal) newStatus = 'yellow';
-        if (downStatus.waterLevel >= window.NAGA_DATA.ALERT_THRESHOLDS.waterLevel.critical) newStatus = 'red';
-        if (newStatus !== downStatus.status) {
-            downStatus.status = newStatus;
-            downStatus.timeInCurrentStatus = 0;
-            if (newStatus === 'green') downStatus.alertLevel = 'safe';
-            else if (newStatus === 'yellow') downStatus.alertLevel = 'prepare';
-            else if (newStatus === 'red') downStatus.alertLevel = 'evacuate';
-        }
-        if (downStatus.status === 'red' && downStatus.timeInCurrentStatus > window.NAGA_DATA.ALERT_THRESHOLDS.escalationTime.redToEvacuate) {
-            downStatus.alertLevel = 'forced_evacuation';
-        }
+        calculateStatus(downStatus, b);
     });
     // Update map and sidebar
     updateMapStatuses();

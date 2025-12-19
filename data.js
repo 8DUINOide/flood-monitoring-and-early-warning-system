@@ -89,7 +89,7 @@ const ALERT_THRESHOLDS = {
 };
 // Color mapping for flood status
 const STATUS_COLORS = {
-  green: { primary: '#10b981', bg: 'rgba(16, 185, 129, 0.2)', label: 'Safe / Monitor' },
+  green: { primary: '#10b981', bg: 'rgba(16, 185, 129, 0.2)', label: 'Safe' },
   yellow: { primary: '#f59e0b', bg: 'rgba(245, 158, 11, 0.2)', label: 'Prepare' },
   red: { primary: '#ef4444', bg: 'rgba(239, 68, 68, 0.2)', label: 'Critical' },
 };

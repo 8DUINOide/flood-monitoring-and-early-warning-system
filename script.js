@@ -242,10 +242,20 @@ function updateSidebar(barangay) {
     const label = window.NAGA_DATA.STATUS_COLORS[status.status].label;
     const action = window.NAGA_DATA.ALERT_ACTIONS[status.alertLevel];
     const color = BARANGAY_COLORS[barangay.id];
+
     document.getElementById('sidebar-content').innerHTML = `
         <h3>Status: <span class="status-badge ${badgeClass}">${status.status.toUpperCase()}</span></h3>
-        <div class="info-row"><span>Alert Level:</span> <span>${label}</span></div>
-        <div class="info-row"><span>Recommended Action:</span> <span>${action}</span></div>
+
+        <div class="info-section">
+            <div class="info-label">Alert Level:</div>
+            <div class="info-value highlight">${label}</div>
+        </div>
+
+        <div class="info-section">
+            <div class="info-label">Recommended Action:</div>
+            <div class="info-value action-text">${action}</div>
+        </div>
+
         <div class="sensor-section">
             <h4>≡ Flood Sensors (LMDS200 & Weather)</h4>
             <div class="info-row"><span>Water Level:</span> <span class="editable" data-field="waterLevel">${status.waterLevel.toFixed(2)} m</span></div>
@@ -253,6 +263,7 @@ function updateSidebar(barangay) {
             <div class="info-row"><span>Rainfall Intensity:</span> <span class="editable" data-field="rainfallIntensity">${status.rainfallIntensity.toFixed(1)} mm/hr</span></div>
             <div class="info-row"><span>Soil Moisture:</span> <span class="editable" data-field="soilMoisture">${status.soilMoisture} %</span></div>
         </div>
+
         <div class="sensor-section">
             <h4>☁ Weather Sensors (LT-208S)</h4>
             <div class="info-row"><span>Air Temperature:</span> <span class="editable" data-field="airTemp">${status.airTemp.toFixed(1)} °C</span></div>
@@ -261,11 +272,14 @@ function updateSidebar(barangay) {
             <div class="info-row"><span>Wind Speed:</span> <span class="editable" data-field="windSpeed">${status.windSpeed.toFixed(1)} m/s</span></div>
             <div class="info-row"><span>Wind Direction:</span> <span class="editable" data-field="windDirection">${status.windDirection} °</span></div>
         </div>
+
         <div class="info-row"><span>Elevation:</span> <span>${barangay.elevation} m</span></div>
         <div class="info-row"><span>Flood Risk:</span> <span>${barangay.floodRisk}</span></div>
         <div class="info-row"><span>Base Color ID:</span> <span><div class="color-swatch" style="background: ${color};"></div>${color}</span></div>
         <div class="info-row"><span>Last Update:</span> <span>${status.timestamp.toLocaleTimeString()}</span></div>
+
         <button id="edit-save-btn" class="edit-btn">Edit</button>
+
         <div class="menu-section">
             <h4><i class="fa-solid fa-circle-info"></i> Flood Status Conditions</h4>
             <div class="legend">
@@ -277,6 +291,7 @@ function updateSidebar(barangay) {
     `;
     document.getElementById('edit-save-btn').onclick = () => toggleEdit(barangay);
 }
+
 function toggleEdit(barangay) {
     const btn = document.getElementById('edit-save-btn');
     const status = statuses.find(s => s.barangayId === barangay.id);
@@ -311,15 +326,12 @@ function calculateStatus(status, barangay) {
     let waterStatus = 'green';
     if (status.waterLevel >= window.NAGA_DATA.ALERT_THRESHOLDS.waterLevel.greenToYellow) waterStatus = 'yellow';
     if (status.waterLevel >= window.NAGA_DATA.ALERT_THRESHOLDS.waterLevel.yellowToRed) waterStatus = 'red';
-
     let rainStatus = 'green';
     if (status.rainfallIntensity >= window.NAGA_DATA.ALERT_THRESHOLDS.rainfall.greenToYellow) rainStatus = 'yellow';
     if (status.rainfallIntensity >= window.NAGA_DATA.ALERT_THRESHOLDS.rainfall.yellowToRed) rainStatus = 'red';
-
     const statusLevels = { green: 0, yellow: 1, red: 2 };
     const maxLevel = Math.max(statusLevels[waterStatus], statusLevels[rainStatus]);
     const newStatus = Object.keys(statusLevels).find(key => statusLevels[key] === maxLevel);
-
     if (newStatus !== status.status) {
         status.status = newStatus;
         status.timeInCurrentStatus = 0;

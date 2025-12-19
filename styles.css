@@ -316,3 +316,34 @@ body, html {
     border: 1px solid #ccc;
     border-radius: 4px;
 }
+
+.info-section {
+    margin: 1rem 0;
+    padding: 0.75rem;
+    background: #f8fafc;
+    border-radius: 6px;
+    border-left: 4px solid #003A6C;
+}
+
+.info-label {
+    font-weight: bold;
+    color: #003A6C;
+    margin-bottom: 0.35rem;
+    font-size: 0.95em;
+}
+
+.info-value {
+    font-size: 1.05em;
+    color: #1e293b;
+}
+
+.info-value.highlight {
+    font-weight: bold;
+    color: #0369a1;
+}
+
+.info-value.action-text {
+    font-weight: bold;
+    color: #000000; /* black for all actions */
+    line-height: 1.4;
+}

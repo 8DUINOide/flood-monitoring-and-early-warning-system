@@ -21,7 +21,7 @@
 <!-- Left slide-in menu -->
 <div id="left-menu" class="menu-hidden">
     <div class="menu-header">
-        <h3>Naga Flood Simulator</h3>
+        <h3>Naga Flood Monitor</h3>
         <button onclick="toggleMenu()" class="close-menu">&times;</button>
     </div>
     <div class="menu-search">
@@ -55,18 +55,6 @@
             <div class="legend-item"><span class="legend-color" style="background: #1E90FF;"></span> Waterways: Blue lines/areas for rivers & water bodies (shows downhill flow in terrain)</div>
             <div class="legend-item"><span class="legend-color" style="background: #A9A9A9;"></span> Hillshade: Shaded relief for terrain shadows (darker = steeper slopes)</div>
             <div class="legend-item"><span class="legend-color" style="background: #8B4513;"></span> Contours: Brown lines for elevation levels (tilt map for 3D view to estimate heights)</div>
-        </div>
-    </div>
-    <div class="menu-section">
-        <h4><i class="fa-solid fa-play-circle"></i> Simulation Controls</h4>
-        <div class="sim-controls">
-            <button onclick="startSimulation()" id="start-btn">Start Simulation</button>
-            <button onclick="pauseSimulation()" id="pause-btn" disabled>Pause</button>
-            <button onclick="resetSimulation()" id="reset-btn" disabled>Reset</button>
-            <div class="speed-control">
-                <label>Speed: </label>
-                <input type="range" id="sim-speed" min="1" max="10" value="5" disabled>
-            </div>
         </div>
     </div>
     <div class="menu-section">

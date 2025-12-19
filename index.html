@@ -1,4 +1,3 @@
-<!-- index.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -12,49 +11,57 @@
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-<!-- Top-left hamburger -->
 <button id="hamburger" onclick="toggleMenu()"><i class="fa-solid fa-bars"></i></button>
-<!-- Full-screen map -->
+
 <div id="map-container">
     <div id="map"></div>
 </div>
-<!-- Left slide-in menu -->
+
 <div id="left-menu" class="menu-hidden">
     <div class="menu-header">
         <h3>Naga Flood Monitor</h3>
-        <button onclick="toggleMenu()" class="close-menu">&times;</button>
+        <button onclick="toggleMenu()" class="close-menu">×</button>
     </div>
+
+    <!-- Status Counter -->
+    <div id="status-counter" class="status-counter">
+        <span class="counter-item" data-status="green"><i class="fa-solid fa-circle"></i> <span id="count-green">27</span> Green</span>
+        <span class="counter-item" data-status="yellow"><i class="fa-solid fa-circle"></i> <span id="count-yellow">0</span> Yellow</span>
+        <span class="counter-item" data-status="red"><i class="fa-solid fa-circle"></i> <span id="count-red">0</span> Red</span>
+        <span class="counter-total">| <strong>27</strong> Total</span>
+    </div>
+
     <div class="menu-search">
         <input id="map-search-input" type="text" placeholder="Search in Naga...">
         <button onclick="searchLocation()"><i class="fa-solid fa-search"></i></button>
     </div>
     <div class="menu-section">
         <h4><i class="fa-solid fa-filter"></i> Filter by Status</h4>
-        <select id="status-filter" onchange="filterByStatus(this.value)">
-            <option value="all">All</option>
-            <option value="green">Green</option>
-            <option value="yellow">Yellow</option>
-            <option value="red">Red</option>
-        </select>
+        <div class="status-filter-buttons">
+            <button class="filter-btn active" data-status="all">All</button>
+            <button class="filter-btn" data-status="green">Green</button>
+            <button class="filter-btn" data-status="yellow">Yellow</button>
+            <button class="filter-btn" data-status="red">Red</button>
+        </div>
     </div>
     <div class="menu-section">
-        <h4><i class="fa-solid fa-list"></i> Barangays (1-27) <span onclick="toggleBarangayList()">&#9660;</span></h4>
+        <h4><i class="fa-solid fa-list"></i> Barangays (1-27) <span onclick="toggleBarangayList()">▼</span></h4>
         <ul id="barangay-list"></ul>
     </div>
     <div class="menu-section">
         <h4><i class="fa-solid fa-circle-info"></i> Flood Alert Legend</h4>
         <div class="legend">
-            <div class="legend-item"><span class="legend-color green"></span> Green: Safe - Continue monitoring (Water <0.5m & Rain <7.5mm/hr)</div>
-            <div class="legend-item"><span class="legend-color yellow"></span> Yellow: Prepare - Secure belongings & be ready (Water 0.5-1.0m or Rain 7.5-30mm/hr)</div>
-            <div class="legend-item"><span class="legend-color red"></span> Red: Critical - Evacuate immediately (Water >1.0m or Rain >30mm/hr)</div>
+            <div class="legend-item"><span class="legend-color green"></span> Green: Safe</div>
+            <div class="legend-item"><span class="legend-color yellow"></span> Yellow: Prepare</div>
+            <div class="legend-item"><span class="legend-color red"></span> Red: Critical - Evacuate</div>
         </div>
     </div>
     <div class="menu-section">
         <h4><i class="fa-solid fa-map-marked-alt"></i> Map Features Legend</h4>
         <div class="legend">
-            <div class="legend-item"><span class="legend-color" style="background: #1E90FF;"></span> Waterways: Blue lines/areas for rivers & water bodies (shows downhill flow in terrain)</div>
-            <div class="legend-item"><span class="legend-color" style="background: #A9A9A9;"></span> Hillshade: Shaded relief for terrain shadows (darker = steeper slopes)</div>
-            <div class="legend-item"><span class="legend-color" style="background: #8B4513;"></span> Contours: Brown lines for elevation levels (tilt map for 3D view to estimate heights)</div>
+            <div class="legend-item"><span class="legend-color" style="background: #1E90FF;"></span> Waterways: Naga River</div>
+            <div class="legend-item"><span class="legend-color" style="background: #A9A9A9;"></span> Hillshade: Terrain</div>
+            <div class="legend-item"><span class="legend-color" style="background: #8B4513;"></span> Contours: Elevation</div>
         </div>
     </div>
     <div class="menu-section">
@@ -66,15 +73,17 @@
         </div>
     </div>
 </div>
-<!-- Right details sidebar -->
+
 <div id="flood-sidebar" class="sidebar-hidden">
     <div class="sidebar-header">
         <h2 id="sidebar-title">Details</h2>
-        <button onclick="closeFloodSidebar()" class="close-btn">&times;</button>
+        <button onclick="closeFloodSidebar()" class="close-btn">×</button>
     </div>
     <div id="sidebar-content"></div>
 </div>
+
 <div id="toast" class="toast" style="display: none;"></div>
+
 <script src="data.js"></script>
 <script src="script.js"></script>
 </body>

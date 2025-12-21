@@ -2,7 +2,6 @@
 let map, barangayMarkers = [], highlightedMarker = null, highlightedFeatureId = null;
 let highlightedListItem = null;
 let geoData = null;
-
 const MAPBOX_TOKEN = 'pk.eyJ1IjoiYWxmcmFuY2lzYnA0IiwiYSI6ImNtajloOW4zYzBjYTAzZHNiaHVuc2V1dWUifQ.m_UdZu36KHAKXu8-3TXElQ';
 const BARANGAY_COLORS = {
     'abella': '#FFB6C1', 'bagumbayan_norte': '#98FB98', 'bagumbayan_sur': '#228B22',
@@ -44,7 +43,6 @@ const BARANGAY_NAME_MAP = {
     'tinago': 'Tinago',
     'triangulo': 'Triangulo'
 };
-
 let statuses = [...window.NAGA_DATA.initialStatuses];
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -248,7 +246,6 @@ function resetHighlights() {
         highlightedListItem.classList.remove('list-highlight');
         highlightedListItem = null;
     }
-
     // Re-apply current filter to restore correct marker visibility
     const activeFilterBtn = document.querySelector('.filter-btn.active');
     const currentFilter = activeFilterBtn ? activeFilterBtn.dataset.status : 'all';
@@ -374,13 +371,36 @@ function calculateStatus(status, barangay) {
 function updateStatusCounter() {
     const counts = { green: 0, yellow: 0, red: 0 };
     statuses.forEach(s => counts[s.status]++);
-    document.getElementById('count-green').textContent = counts.green;
-    document.getElementById('count-yellow').textContent = counts.yellow;
-    document.getElementById('count-red').textContent = counts.red;
-    document.querySelectorAll('#status-counter .counter-item').forEach(item => {
-        const status = item.dataset.status;
-        item.style.color = window.NAGA_DATA.STATUS_COLORS[status].primary;
-    });
+
+    // Create or update status counter display
+    let statusCounterDiv = document.getElementById('status-counter');
+    if (!statusCounterDiv) {
+        statusCounterDiv = document.createElement('div');
+        statusCounterDiv.id = 'status-counter';
+        statusCounterDiv.className = 'status-counter';
+
+        // Insert after menu header
+        const menuHeader = document.querySelector('.menu-header');
+        if (menuHeader && menuHeader.nextSibling) {
+            menuHeader.parentNode.insertBefore(statusCounterDiv, menuHeader.nextSibling);
+        }
+    }
+
+    statusCounterDiv.innerHTML = `
+        <div class="counter-item" data-status="green">
+            <i class="fa-solid fa-circle" style="color: #10b981;"></i>
+            <span id="count-green">${counts.green}</span>
+        </div>
+        <div class="counter-item" data-status="yellow">
+            <i class="fa-solid fa-circle" style="color: #f59e0b;"></i>
+            <span id="count-yellow">${counts.yellow}</span>
+        </div>
+        <div class="counter-item" data-status="red">
+            <i class="fa-solid fa-circle" style="color: #ef4444;"></i>
+            <span id="count-red">${counts.red}</span>
+        </div>
+        <div class="counter-total">Total: ${counts.green + counts.yellow + counts.red}</div>
+    `;
 }
 
 function closeFloodSidebar() {
@@ -463,22 +483,25 @@ function filterByStatus(val) {
 }
 
 function updateMapStatuses() {
-    geoData.features.forEach(feature => {
-        const statusObj = statuses.find(s => s.barangayId === feature.properties.barangayId);
-        if (statusObj) {
-            feature.properties.status = statusObj.status;
-            feature.properties.statusColor = window.NAGA_DATA.STATUS_COLORS[statusObj.status].primary;
+    if (geoData) {
+        geoData.features.forEach(feature => {
+            const statusObj = statuses.find(s => s.barangayId === feature.properties.barangayId);
+            if (statusObj) {
+                feature.properties.status = statusObj.status;
+                feature.properties.statusColor = window.NAGA_DATA.STATUS_COLORS[statusObj.status].primary;
+            }
+        });
+        if (map.getSource('barangays')) {
+            map.getSource('barangays').setData(geoData);
         }
-    });
-    if (map.getSource('barangays')) {
-        map.getSource('barangays').setData(geoData);
     }
+
     barangayMarkers.forEach(m => {
         const status = statuses.find(s => s.barangayId === m.data.id);
         if (status) m.marker.setColor(window.NAGA_DATA.STATUS_COLORS[status.status].primary);
     });
-    updateStatusCounter();
 
+    updateStatusCounter();
     // Re-apply current filter after status update
     const activeFilterBtn = document.querySelector('.filter-btn.active');
     const currentFilter = activeFilterBtn ? activeFilterBtn.dataset.status : 'all';

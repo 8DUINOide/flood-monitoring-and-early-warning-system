@@ -4,7 +4,6 @@ let highlightedListItem = null;
 let geoData = null;
 
 const MAPBOX_TOKEN = 'pk.eyJ1IjoiYWxmcmFuY2lzYnA0IiwiYSI6ImNtajloOW4zYzBjYTAzZHNiaHVuc2V1dWUifQ.m_UdZu36KHAKXu8-3TXElQ';
-
 const BARANGAY_COLORS = {
     'abella': '#FFB6C1', 'bagumbayan_norte': '#98FB98', 'bagumbayan_sur': '#228B22',
     'balatas': '#ADD8E6', 'calauag': '#32CD32', 'cararayan': '#9370DB',
@@ -16,7 +15,6 @@ const BARANGAY_COLORS = {
     'san_francisco': '#008000', 'san_isidro': '#00FF00', 'santa_cruz': '#FF4500',
     'tabuco': '#A52A2A', 'tinago': '#B0E0E6', 'triangulo': '#FF69B4'
 };
-
 const BARANGAY_NAME_MAP = {
     'abella': 'Abella',
     'bagumbayan_norte': 'Bagumbayan Norte',
@@ -47,22 +45,15 @@ const BARANGAY_NAME_MAP = {
     'triangulo': 'Triangulo'
 };
 
-let simulationRunning = false;
-let simulationInterval = null;
-let currentTime = 0;
 let statuses = [...window.NAGA_DATA.initialStatuses];
 
 document.addEventListener('DOMContentLoaded', async () => {
-    localStorage.setItem('sim_token', 'fake_token_for_local_sim');
-
     try {
         const res = await fetch('https://raw.githubusercontent.com/faeldon/philippines-json-maps/master/2023/geojson/barangays/lowres/barangays-munic-050260000.geojson');
         geoData = await res.json();
-
         geoData.features.forEach(feature => {
             const propName = feature.properties.name.trim();
             let matchedId = null;
-
             for (const [id, names] of Object.entries(BARANGAY_NAME_MAP)) {
                 if (Array.isArray(names)) {
                     if (names.some(n => n.toLowerCase() === propName.toLowerCase())) {
@@ -74,7 +65,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                     break;
                 }
             }
-
             feature.properties.barangayId = matchedId || propName.toLowerCase().replace(/\s+/g, '_').normalize("NFD").replace(/[\u0300-\u036f]/g, "");
             feature.properties.color = BARANGAY_COLORS[feature.properties.barangayId] || '#808080';
             feature.properties.status = 'green';
@@ -83,11 +73,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     } catch (err) {
         console.error('GeoJSON load error:', err);
     }
-
     initMap();
     generateBarangayList();
     updateStatusCounter();
-
     document.querySelectorAll('.filter-btn').forEach(btn => {
         btn.addEventListener('click', () => filterByStatus(btn.dataset.status));
     });
@@ -102,14 +90,12 @@ function initMap() {
         center: [NAGA_CITY_CENTER.lng, NAGA_CITY_CENTER.lat],
         zoom: 14
     });
-
     map.on('style.load', addCustomLayers);
     map.on('load', () => {
         map.addControl(new mapboxgl.NavigationControl());
         map.addControl(new mapboxgl.GeolocateControl());
         map.addControl(new mapboxgl.FullscreenControl());
         map.addControl(new mapboxgl.ScaleControl({ unit: 'metric' }), 'bottom-right');
-
         window.NAGA_DATA.barangays.forEach((barangay, index) => {
             const id = index + 1;
             const color = BARANGAY_COLORS[barangay.id] || '#808080';
@@ -122,17 +108,14 @@ function initMap() {
             });
             barangayMarkers.push({ marker, data: barangay, id, featureId: barangay.id, color, listIndex: index });
         });
-
         map.resize();
     });
 }
 
 function addCustomLayers() {
     if (!geoData) return;
-
     if (!map.getSource('barangays')) {
         map.addSource('barangays', { type: 'geojson', data: geoData });
-
         map.addLayer({
             id: 'barangay-boundaries',
             type: 'fill',
@@ -142,7 +125,6 @@ function addCustomLayers() {
                 'fill-opacity': 0.2
             }
         });
-
         map.addLayer({
             id: 'barangay-outlines',
             type: 'line',
@@ -153,7 +135,6 @@ function addCustomLayers() {
                 'line-opacity': 0.5
             }
         });
-
         if (!highlightedFeatureId) {
             const bounds = new mapboxgl.LngLatBounds();
             geoData.features.forEach(f => {
@@ -164,21 +145,18 @@ function addCustomLayers() {
             map.fitBounds(bounds, { padding: 50, duration: 1500 });
         }
     }
-
     if (!map.getSource('naga-river')) {
         const riverCoords = window.NAGA_DATA.NAGA_RIVER_PATH.map(p => [p.lng, p.lat]);
         map.addSource('naga-river', {
             type: 'geojson',
             data: { type: 'Feature', geometry: { type: 'LineString', coordinates: riverCoords } }
         });
-
         map.addLayer({
             id: 'naga-river-glow',
             type: 'line',
             source: 'naga-river',
             paint: { 'line-color': '#00BFFF', 'line-width': 8, 'line-opacity': 0.4 }
         });
-
         map.addLayer({
             id: 'naga-river-line',
             type: 'line',
@@ -186,7 +164,6 @@ function addCustomLayers() {
             paint: { 'line-color': '#1E90FF', 'line-width': 4, 'line-opacity': 0.9 }
         });
     }
-
     if (!map.getSource('mapbox-dem')) {
         map.addSource('mapbox-dem', {
             type: 'raster-dem',
@@ -196,7 +173,6 @@ function addCustomLayers() {
         });
         map.setTerrain({ source: 'mapbox-dem', exaggeration: 1.5 });
     }
-
     if (!map.getLayer('hillshading')) {
         map.addLayer({
             id: 'hillshading',
@@ -205,14 +181,12 @@ function addCustomLayers() {
             paint: { 'hillshade-shadow-color': '#473B24' }
         });
     }
-
     if (!map.getSource('terrain')) {
         map.addSource('terrain', {
             type: 'vector',
             url: 'mapbox://mapbox.mapbox-terrain-v2'
         });
     }
-
     if (!map.getLayer('contours')) {
         map.addLayer({
             id: 'contours',
@@ -227,7 +201,6 @@ function addCustomLayers() {
 function selectBarangay(barangay, marker, id, featureId, fromList = false) {
     map.flyTo({ center: [barangay.lng, barangay.lat], zoom: 15, duration: 1000 });
     resetHighlights();
-
     if (marker) {
         const el = marker.getElement();
         el.classList.add('highlight');
@@ -236,14 +209,12 @@ function selectBarangay(barangay, marker, id, featureId, fromList = false) {
         el.style.zIndex = '10';
         highlightedMarker = { marker, originalColor: BARANGAY_COLORS[featureId] || '#808080' };
     }
-
     const brighter = brightenColor(BARANGAY_COLORS[featureId] || '#808080');
     map.setPaintProperty('barangay-boundaries', 'fill-opacity', ['case', ['==', ['get', 'barangayId'], featureId], 0.6, 0.2]);
     map.setPaintProperty('barangay-boundaries', 'fill-color', ['case', ['==', ['get', 'barangayId'], featureId], brighter, ['get', 'statusColor']]);
     map.setPaintProperty('barangay-outlines', 'line-width', ['case', ['==', ['get', 'barangayId'], featureId], 3, 1]);
     map.setPaintProperty('barangay-outlines', 'line-color', ['case', ['==', ['get', 'barangayId'], featureId], '#003A6C', ['get', 'color']]);
     highlightedFeatureId = featureId;
-
     const listItems = document.querySelectorAll('#barangay-list li');
     const targetIndex = window.NAGA_DATA.barangays.findIndex(b => b.id === barangay.id);
     if (targetIndex !== -1) {
@@ -252,12 +223,11 @@ function selectBarangay(barangay, marker, id, featureId, fromList = false) {
         listItem.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         highlightedListItem = listItem;
     }
-
     showFloodSidebar(barangay, id, BARANGAY_COLORS[featureId] || '#808080');
-
     if (!fromList) toggleMenu(true);
 }
 
+// FIXED: Now restores correct marker visibility based on active filter
 function resetHighlights() {
     if (highlightedMarker) {
         const el = highlightedMarker.marker.getElement();
@@ -267,7 +237,6 @@ function resetHighlights() {
         el.style.zIndex = '';
         highlightedMarker = null;
     }
-
     if (map.getLayer('barangay-boundaries')) {
         map.setPaintProperty('barangay-boundaries', 'fill-opacity', 0.2);
         map.setPaintProperty('barangay-boundaries', 'fill-color', ['get', 'statusColor']);
@@ -275,11 +244,15 @@ function resetHighlights() {
         map.setPaintProperty('barangay-outlines', 'line-color', ['get', 'color']);
         highlightedFeatureId = null;
     }
-
     if (highlightedListItem) {
         highlightedListItem.classList.remove('list-highlight');
         highlightedListItem = null;
     }
+
+    // Re-apply current filter to restore correct marker visibility
+    const activeFilterBtn = document.querySelector('.filter-btn.active');
+    const currentFilter = activeFilterBtn ? activeFilterBtn.dataset.status : 'all';
+    filterByStatus(currentFilter);
 }
 
 function brightenColor(hex) {
@@ -302,7 +275,6 @@ function updateSidebar(barangay) {
     const label = window.NAGA_DATA.STATUS_COLORS[status.status].label;
     const action = window.NAGA_DATA.ALERT_ACTIONS[status.alertLevel];
     const color = BARANGAY_COLORS[barangay.id];
-
     document.getElementById('sidebar-content').innerHTML = `
         <h3>Status: <span class="status-badge ${badgeClass}">${status.status.toUpperCase()}</span></h3>
         <div class="info-section">
@@ -348,7 +320,6 @@ function updateSidebar(barangay) {
 function toggleEdit(barangay) {
     const btn = document.getElementById('edit-save-btn');
     const status = statuses.find(s => s.barangayId === barangay.id);
-
     if (btn.textContent === 'Edit') {
         btn.textContent = 'Save';
         document.querySelectorAll('#sidebar-content .editable').forEach(span => {
@@ -370,16 +341,12 @@ function toggleEdit(barangay) {
                 span.innerHTML = `${newValue.toFixed(fixed)}${unit}`;
             }
         });
-
         Object.assign(status, updates);
         status.timestamp = new Date();
-
         calculateStatus(status, barangay);
-
         updateSidebar(barangay);
         updateMapStatuses();
         updateStatusCounter();
-
         btn.textContent = 'Edit';
     }
 }
@@ -388,21 +355,17 @@ function calculateStatus(status, barangay) {
     let waterStatus = 'green';
     if (status.waterLevel >= window.NAGA_DATA.ALERT_THRESHOLDS.waterLevel.greenToYellow) waterStatus = 'yellow';
     if (status.waterLevel >= window.NAGA_DATA.ALERT_THRESHOLDS.waterLevel.yellowToRed) waterStatus = 'red';
-
     let rainStatus = 'green';
     if (status.rainfallIntensity >= window.NAGA_DATA.ALERT_THRESHOLDS.rainfall.greenToYellow) rainStatus = 'yellow';
     if (status.rainfallIntensity >= window.NAGA_DATA.ALERT_THRESHOLDS.rainfall.yellowToRed) rainStatus = 'red';
-
     const statusLevels = { green: 0, yellow: 1, red: 2 };
     const maxLevel = Math.max(statusLevels[waterStatus], statusLevels[rainStatus]);
     const newStatus = Object.keys(statusLevels).find(key => statusLevels[key] === maxLevel);
-
     if (newStatus !== status.status) {
         status.status = newStatus;
         status.timeInCurrentStatus = 0;
         status.alertLevel = newStatus === 'green' ? 'safe' : newStatus === 'yellow' ? 'prepare' : 'evacuate';
     }
-
     if (status.status === 'red' && status.timeInCurrentStatus > window.NAGA_DATA.ALERT_THRESHOLDS.escalationTime.redToEvacuate) {
         status.alertLevel = 'forced_evacuation';
     }
@@ -411,11 +374,9 @@ function calculateStatus(status, barangay) {
 function updateStatusCounter() {
     const counts = { green: 0, yellow: 0, red: 0 };
     statuses.forEach(s => counts[s.status]++);
-
     document.getElementById('count-green').textContent = counts.green;
     document.getElementById('count-yellow').textContent = counts.yellow;
     document.getElementById('count-red').textContent = counts.red;
-
     document.querySelectorAll('#status-counter .counter-item').forEach(item => {
         const status = item.dataset.status;
         item.style.color = window.NAGA_DATA.STATUS_COLORS[status].primary;
@@ -424,7 +385,7 @@ function updateStatusCounter() {
 
 function closeFloodSidebar() {
     document.getElementById('flood-sidebar').classList.remove('sidebar-visible');
-    resetHighlights();
+    resetHighlights(); // Now safely restores all marker visibility
 }
 
 function toggleMenu(open = null) {
@@ -488,15 +449,14 @@ function setBasemap(type) {
 function filterByStatus(val) {
     barangayMarkers.forEach(m => {
         const status = statuses.find(s => s.barangayId === m.data.id)?.status || 'green';
-        m.marker.getElement().style.display = (val === 'all' || status === val) ? 'block' : 'none';
+        const shouldShow = (val === 'all' || status === val);
+        m.marker.getElement().style.display = shouldShow ? 'block' : 'none';
     });
-
     if (val === 'all') {
         map.setPaintProperty('barangay-boundaries', 'fill-opacity', 0.2);
     } else {
         map.setPaintProperty('barangay-boundaries', 'fill-opacity', ['case', ['==', ['get', 'status'], val], 0.6, 0]);
     }
-
     document.querySelectorAll('.filter-btn').forEach(btn => {
         btn.classList.toggle('active', btn.dataset.status === val);
     });
@@ -510,15 +470,17 @@ function updateMapStatuses() {
             feature.properties.statusColor = window.NAGA_DATA.STATUS_COLORS[statusObj.status].primary;
         }
     });
-
     if (map.getSource('barangays')) {
         map.getSource('barangays').setData(geoData);
     }
-
     barangayMarkers.forEach(m => {
         const status = statuses.find(s => s.barangayId === m.data.id);
         if (status) m.marker.setColor(window.NAGA_DATA.STATUS_COLORS[status.status].primary);
     });
-
     updateStatusCounter();
+
+    // Re-apply current filter after status update
+    const activeFilterBtn = document.querySelector('.filter-btn.active');
+    const currentFilter = activeFilterBtn ? activeFilterBtn.dataset.status : 'all';
+    filterByStatus(currentFilter);
 }

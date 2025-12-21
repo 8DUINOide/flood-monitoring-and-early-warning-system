@@ -5,7 +5,6 @@ const NAGA_CITY_CENTER = {
   lat: 13.6244,
   lng: 123.1864,
 };
-
 // Highly accurate Naga River path – traced from satellite imagery (Dec 2025)
 const NAGA_RIVER_PATH = [
   { lng: 123.1858, lat: 13.6105 },
@@ -24,7 +23,6 @@ const NAGA_RIVER_PATH = [
   { lng: 123.1870, lat: 13.6405 },
   { lng: 123.1885, lat: 13.6422 }
 ];
-
 const barangays = [
   { id: 'abella', name: 'Abella', lat: 13.6232621, lng: 123.1818874, population: 5757, area: 120, elevation: 12, floodRisk: 'medium', nearWaterway: true },
   { id: 'bagumbayan_norte', name: 'Bagumbayan Norte', lat: 13.6357009, lng: 123.1850491, population: 2203, area: 45, elevation: 10, floodRisk: 'high', nearWaterway: true },
@@ -54,7 +52,6 @@ const barangays = [
   { id: 'tinago', name: 'Tinago', lat: 13.624571, lng: 123.1920747, population: 2904, area: 45, elevation: 8, floodRisk: 'high', nearWaterway: true },
   { id: 'triangulo', name: 'Triangulo', lat: 13.6175384, lng: 123.1927773, population: 8702, area: 95, elevation: 10, floodRisk: 'medium', nearWaterway: true },
 ];
-
 const weatherStations = barangays.map((b, index) => ({
   id: `station_${b.id}`,
   barangayId: b.id,
@@ -63,7 +60,6 @@ const weatherStations = barangays.map((b, index) => ({
   lng: b.lng,
   type: b.nearWaterway ? 'combined' : (index % 2 === 0 ? 'rainfall' : 'water_level'),
 }));
-
 const initialStatuses = barangays.map(b => ({
   barangayId: b.id,
   status: 'green',
@@ -80,24 +76,20 @@ const initialStatuses = barangays.map(b => ({
   windSpeed: 5.4,
   windDirection: 185
 }));
-
 const ALERT_THRESHOLDS = {
   waterLevel: { greenToYellow: 0.5, yellowToRed: 1.0 },
   rainfall: { greenToYellow: 7.5, yellowToRed: 30 },
   escalationTime: { yellowToRed: 30, redToEvacuate: 15 },
 };
-
 const STATUS_COLORS = {
   green: { primary: '#10b981', bg: 'rgba(16, 185, 129, 0.2)', label: 'Safe' },
   yellow: { primary: '#f59e0b', bg: 'rgba(245, 158, 11, 0.2)', label: 'Prepare' },
   red: { primary: '#ef4444', bg: 'rgba(239, 68, 68, 0.2)', label: 'Critical' },
 };
-
 const ALERT_ACTIONS = {
   safe: 'Continue monitoring. Normal conditions.',
   prepare: 'Secure belongings. Monitor updates closely. Be ready to evacuate.',
   evacuate: 'EVACUATE NOW to designated evacuation centers.',
   forced_evacuation: 'MANDATORY EVACUATION. Leave immediately for your safety.',
 };
-
 window.NAGA_DATA = { NAGA_CITY_CENTER, NAGA_RIVER_PATH, barangays, weatherStations, initialStatuses, ALERT_THRESHOLDS, STATUS_COLORS, ALERT_ACTIONS };

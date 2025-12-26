@@ -2,18 +2,39 @@
 let map, barangayMarkers = [], highlightedMarker = null, highlightedFeatureId = null;
 let highlightedListItem = null;
 let geoData = null;
+
 const MAPBOX_TOKEN = 'pk.eyJ1IjoiYWxmcmFuY2lzYnA0IiwiYSI6ImNtajloOW4zYzBjYTAzZHNiaHVuc2V1dWUifQ.m_UdZu36KHAKXu8-3TXElQ';
+
 const BARANGAY_COLORS = {
-    'abella': '#FFB6C1', 'bagumbayan_norte': '#98FB98', 'bagumbayan_sur': '#228B22',
-    'balatas': '#ADD8E6', 'calauag': '#32CD32', 'cararayan': '#9370DB',
-    'carolina': '#DDA0DD', 'concepcion_grande': '#90EE90', 'concepcion_pequena': '#006400',
-    'dayangdang': '#FFD700', 'del_rosario': '#FFA500', 'dinaga': '#8B4513',
-    'igualdad_interior': '#FFC0CB', 'lerma': '#FF8C00', 'liboton': '#0000FF',
-    'mabolo': '#FFFFE0', 'pacol': '#800080', 'panicuason': '#FFFF00',
-    'penafrancia': '#FF0000', 'sabang': '#DDA0DD', 'san_felipe': '#87CEEB',
-    'san_francisco': '#008000', 'san_isidro': '#00FF00', 'santa_cruz': '#FF4500',
-    'tabuco': '#A52A2A', 'tinago': '#B0E0E6', 'triangulo': '#FF69B4'
+    'abella': '#FFB6C1',
+    'bagumbayan_norte': '#98FB98',
+    'bagumbayan_sur': '#228B22',
+    'balatas': '#ADD8E6',
+    'calauag': '#32CD32',
+    'cararayan': '#9370DB',
+    'carolina': '#DDA0DD',
+    'concepcion_grande': '#90EE90',
+    'concepcion_pequena': '#006400',
+    'dayangdang': '#FFD700',
+    'del_rosario': '#FFA500',
+    'dinaga': '#8B4513',
+    'igualdad_interior': '#FFC0CB',
+    'lerma': '#FF8C00',
+    'liboton': '#0000FF',
+    'mabolo': '#FFFFE0',
+    'pacol': '#800080',
+    'panicuason': '#FFFF00',
+    'penafrancia': '#FF0000',
+    'sabang': '#DDA0DD',
+    'san_felipe': '#87CEEB',
+    'san_francisco': '#008000',
+    'san_isidro': '#00FF00',
+    'santa_cruz': '#FF4500',
+    'tabuco': '#A52A2A',
+    'tinago': '#B0E0E6',
+    'triangulo': '#FF69B4'
 };
+
 const BARANGAY_NAME_MAP = {
     'abella': 'Abella',
     'bagumbayan_norte': 'Bagumbayan Norte',
@@ -43,7 +64,101 @@ const BARANGAY_NAME_MAP = {
     'tinago': 'Tinago',
     'triangulo': 'Triangulo'
 };
+
 let statuses = [...window.NAGA_DATA.initialStatuses];
+
+// Google Earth Engine Tile URLs (visualized with your palettes)
+const DTM_TILE_URL = 'https://earthengine.googleapis.com/v1/projects/floodmonitor-482303/maps/74a756330b2519764939472db2bafee4-3e0859fbb8d20b6c365a9fb02836208d/tiles/{z}/{x}/{y}';
+const SLOPE_TILE_URL = 'https://earthengine.googleapis.com/v1/projects/floodmonitor-482303/maps/e11f538e813eea5a699de452b6e14c9f-69635178c5f994fe6c90b18fda6048c1/tiles/{z}/{x}/{y}';
+
+// Visualization parameters from your EE script
+const dtmVis = {min: 0, max: 50, palette: ['#008000', '#ffff00', '#ff0000']}; // green, yellow, red
+const slopeVis = {min: 0, max: 15, palette: ['#ffffff', '#000000']}; // white, black
+
+// Helper function to convert hex to RGB array
+function hexToRgb(hex) {
+    hex = hex.replace('#', '');
+    if (hex.length === 3) hex = hex.split('').map(c => c + c).join('');
+    return [
+        parseInt(hex.substr(0, 2), 16),
+        parseInt(hex.substr(2, 2), 16),
+        parseInt(hex.substr(4, 2), 16)
+    ];
+}
+
+// Async function to get approximate value at point by sampling tile color and interpolating
+async function getValueAtPoint(lon, lat, tileUrl, visParams) {
+    const zoom = 18; // High zoom for better precision
+    const n = Math.pow(2, zoom);
+    const xtile = Math.floor(n * ((lon + 180) / 360));
+    let siny = Math.sin(lat * Math.PI / 180);
+    siny = Math.min(Math.max(siny, -0.9999), 0.9999);
+    const ytile = Math.floor(n * (0.5 - Math.log((1 + siny) / (1 - siny)) / (4 * Math.PI)));
+    const url = tileUrl.replace('{z}', zoom).replace('{x}', xtile).replace('{y}', ytile);
+
+    try {
+        const response = await fetch(url);
+        if (!response.ok) return null;
+        const blob = await response.blob();
+        const img = await createImageBitmap(blob);
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0);
+
+        // Calculate pixel position within the tile
+        const mercX = n * ((lon + 180) / 360);
+        const sinLat = Math.sin(lat * Math.PI / 180);
+        const mercY = n * (0.5 - Math.log((1 + sinLat) / (1 - sinLat)) / (4 * Math.PI));
+        const px = Math.floor((mercX - xtile) * 256);
+        const py = Math.floor((mercY - ytile) * 256);
+
+        const pixelData = ctx.getImageData(px, py, 1, 1).data;
+        if (pixelData[3] < 128) return null; // Semi-transparent or transparent = no data
+
+        const [r, g, b] = pixelData;
+
+        // Parse palette to RGB
+        const paletteRGB = visParams.palette.map(hexToRgb);
+
+        // Function to interpolate color at normalized t (0 to 1)
+        function interpColor(t) {
+            const pos = t * (paletteRGB.length - 1);
+            const i = Math.floor(pos);
+            const f = pos - i;
+            const c1 = paletteRGB[i];
+            const c2 = paletteRGB[i + 1] || c1;
+            return [
+                c1[0] + f * (c2[0] - c1[0]),
+                c1[1] + f * (c2[1] - c1[1]),
+                c1[2] + f * (c2[2] - c1[2])
+            ];
+        }
+
+        // Find best t by minimizing distance (sample 100 points)
+        let bestT = 0;
+        let bestDist = Infinity;
+        const steps = 100;
+        for (let i = 0; i <= steps; i++) {
+            const t = i / steps;
+            const interp = interpColor(t);
+            const dist = (r - interp[0]) ** 2 + (g - interp[1]) ** 2 + (b - interp[2]) ** 2;
+            if (dist < bestDist) {
+                bestDist = dist;
+                bestT = t;
+            }
+        }
+
+        if (bestDist > 100) return null; // Too far from palette, likely no data
+
+        const value = visParams.min + bestT * (visParams.max - visParams.min);
+        return value;
+    } catch (e) {
+        console.error('Error fetching tile:', e);
+        return null;
+    }
+}
 
 document.addEventListener('DOMContentLoaded', async () => {
     try {
@@ -71,9 +186,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     } catch (err) {
         console.error('GeoJSON load error:', err);
     }
+
     initMap();
     generateBarangayList();
     updateStatusCounter();
+
     document.querySelectorAll('.filter-btn').forEach(btn => {
         btn.addEventListener('click', () => filterByStatus(btn.dataset.status));
     });
@@ -82,18 +199,22 @@ document.addEventListener('DOMContentLoaded', async () => {
 function initMap() {
     mapboxgl.accessToken = MAPBOX_TOKEN;
     const { NAGA_CITY_CENTER } = window.NAGA_DATA;
+
     map = new mapboxgl.Map({
         container: 'map',
         style: 'mapbox://styles/mapbox/outdoors-v12',
         center: [NAGA_CITY_CENTER.lng, NAGA_CITY_CENTER.lat],
         zoom: 14
     });
+
     map.on('style.load', addCustomLayers);
+
     map.on('load', () => {
         map.addControl(new mapboxgl.NavigationControl());
         map.addControl(new mapboxgl.GeolocateControl());
         map.addControl(new mapboxgl.FullscreenControl());
         map.addControl(new mapboxgl.ScaleControl({ unit: 'metric' }), 'bottom-right');
+
         window.NAGA_DATA.barangays.forEach((barangay, index) => {
             const id = index + 1;
             const color = BARANGAY_COLORS[barangay.id] || '#808080';
@@ -106,32 +227,87 @@ function initMap() {
             });
             barangayMarkers.push({ marker, data: barangay, id, featureId: barangay.id, color, listIndex: index });
         });
+
+        // Terrain overlay toggles
+        const dtmToggle = document.getElementById('toggle-dtm');
+        const slopeToggle = document.getElementById('toggle-slope');
+        if (dtmToggle) {
+            dtmToggle.addEventListener('change', (e) => {
+                map.setLayoutProperty('dtm-layer', 'visibility', e.target.checked ? 'visible' : 'none');
+            });
+        }
+        if (slopeToggle) {
+            slopeToggle.addEventListener('change', (e) => {
+                map.setLayoutProperty('slope-layer', 'visibility', e.target.checked ? 'visible' : 'none');
+            });
+        }
+
+        // Click to get DTM data at point
+        map.on('click', async (e) => {
+            const lng = e.lngLat.lng;
+            const lat = e.lngLat.lat;
+
+            // Show loading popup
+            const popup = new mapboxgl.Popup({ closeOnClick: true })
+                .setLngLat(e.lngLat)
+                .setHTML(`
+                    <div style="font-size:0.9em; min-width:200px;">
+                        <strong>Coordinates:</strong><br>${lng.toFixed(6)}, ${lat.toFixed(6)}<br><br>
+                        <strong>Elevation (m):</strong> Loading...<br>
+                        <strong>Slope (°):</strong> Loading...
+                    </div>
+                `)
+                .addTo(map);
+
+            try {
+                const [elevation, slope] = await Promise.all([
+                    getValueAtPoint(lng, lat, DTM_TILE_URL, dtmVis),
+                    getValueAtPoint(lng, lat, SLOPE_TILE_URL, slopeVis)
+                ]);
+
+                const elevStr = elevation !== null ? elevation.toFixed(2) : 'No data available';
+                const slopeStr = slope !== null ? slope.toFixed(2) : 'No data available';
+
+                popup.setHTML(`
+                    <div style="font-size:0.9em; min-width:200px;">
+                        <strong>Coordinates:</strong><br>${lng.toFixed(6)}, ${lat.toFixed(6)}<br><br>
+                        <strong>Elevation (m):</strong> ${elevStr}<br>
+                        <strong>Slope (°):</strong> ${slopeStr}
+                    </div>
+                `);
+            } catch (err) {
+                popup.setHTML(`
+                    <div style="font-size:0.9em; min-width:200px;">
+                        <strong>Coordinates:</strong><br>${lng.toFixed(6)}, ${lat.toFixed(6)}<br><br>
+                        <strong>Error:</strong> Unable to fetch data.
+                    </div>
+                `);
+            }
+        });
+
+        // Change cursor to indicate clickable map
+        map.getCanvas().style.cursor = 'pointer';
+
         map.resize();
     });
 }
 
 function addCustomLayers() {
     if (!geoData) return;
+
     if (!map.getSource('barangays')) {
         map.addSource('barangays', { type: 'geojson', data: geoData });
         map.addLayer({
             id: 'barangay-boundaries',
             type: 'fill',
             source: 'barangays',
-            paint: {
-                'fill-color': ['get', 'statusColor'],
-                'fill-opacity': 0.2
-            }
+            paint: { 'fill-color': ['get', 'statusColor'], 'fill-opacity': 0.2 }
         });
         map.addLayer({
             id: 'barangay-outlines',
             type: 'line',
             source: 'barangays',
-            paint: {
-                'line-color': ['get', 'color'],
-                'line-width': 1,
-                'line-opacity': 0.5
-            }
+            paint: { 'line-color': ['get', 'color'], 'line-width': 1, 'line-opacity': 0.5 }
         });
         if (!highlightedFeatureId) {
             const bounds = new mapboxgl.LngLatBounds();
@@ -143,6 +319,7 @@ function addCustomLayers() {
             map.fitBounds(bounds, { padding: 50, duration: 1500 });
         }
     }
+
     if (!map.getSource('naga-river')) {
         const riverCoords = window.NAGA_DATA.NAGA_RIVER_PATH.map(p => [p.lng, p.lat]);
         map.addSource('naga-river', {
@@ -162,6 +339,7 @@ function addCustomLayers() {
             paint: { 'line-color': '#1E90FF', 'line-width': 4, 'line-opacity': 0.9 }
         });
     }
+
     if (!map.getSource('mapbox-dem')) {
         map.addSource('mapbox-dem', {
             type: 'raster-dem',
@@ -171,6 +349,7 @@ function addCustomLayers() {
         });
         map.setTerrain({ source: 'mapbox-dem', exaggeration: 1.5 });
     }
+
     if (!map.getLayer('hillshading')) {
         map.addLayer({
             id: 'hillshading',
@@ -179,12 +358,11 @@ function addCustomLayers() {
             paint: { 'hillshade-shadow-color': '#473B24' }
         });
     }
+
     if (!map.getSource('terrain')) {
-        map.addSource('terrain', {
-            type: 'vector',
-            url: 'mapbox://mapbox.mapbox-terrain-v2'
-        });
+        map.addSource('terrain', { type: 'vector', url: 'mapbox://mapbox.mapbox-terrain-v2' });
     }
+
     if (!map.getLayer('contours')) {
         map.addLayer({
             id: 'contours',
@@ -192,6 +370,36 @@ function addCustomLayers() {
             source: 'terrain',
             'source-layer': 'contour',
             paint: { 'line-color': '#877b59', 'line-width': 1 }
+        });
+    }
+
+    if (!map.getSource('dtm-source')) {
+        map.addSource('dtm-source', {
+            type: 'raster',
+            tiles: [DTM_TILE_URL],
+            tileSize: 256
+        });
+        map.addLayer({
+            id: 'dtm-layer',
+            type: 'raster',
+            source: 'dtm-source',
+            paint: { 'raster-opacity': 0.6 },
+            layout: { 'visibility': document.getElementById('toggle-dtm').checked ? 'visible' : 'none' }
+        });
+    }
+
+    if (!map.getSource('slope-source')) {
+        map.addSource('slope-source', {
+            type: 'raster',
+            tiles: [SLOPE_TILE_URL],
+            tileSize: 256
+        });
+        map.addLayer({
+            id: 'slope-layer',
+            type: 'raster',
+            source: 'slope-source',
+            paint: { 'raster-opacity': 0.6 },
+            layout: { 'visibility': document.getElementById('toggle-slope').checked ? 'visible' : 'none' }
         });
     }
 }
@@ -225,7 +433,6 @@ function selectBarangay(barangay, marker, id, featureId, fromList = false) {
     if (!fromList) toggleMenu(true);
 }
 
-// FIXED: Now restores correct marker visibility based on active filter
 function resetHighlights() {
     if (highlightedMarker) {
         const el = highlightedMarker.marker.getElement();
@@ -371,21 +578,16 @@ function calculateStatus(status, barangay) {
 function updateStatusCounter() {
     const counts = { green: 0, yellow: 0, red: 0 };
     statuses.forEach(s => counts[s.status]++);
-
-    // Create or update status counter display
     let statusCounterDiv = document.getElementById('status-counter');
     if (!statusCounterDiv) {
         statusCounterDiv = document.createElement('div');
         statusCounterDiv.id = 'status-counter';
         statusCounterDiv.className = 'status-counter';
-
-        // Insert after menu header
         const menuHeader = document.querySelector('.menu-header');
         if (menuHeader && menuHeader.nextSibling) {
             menuHeader.parentNode.insertBefore(statusCounterDiv, menuHeader.nextSibling);
         }
     }
-
     statusCounterDiv.innerHTML = `
         <div class="counter-item" data-status="green">
             <i class="fa-solid fa-circle" style="color: #10b981;"></i>
@@ -405,7 +607,7 @@ function updateStatusCounter() {
 
 function closeFloodSidebar() {
     document.getElementById('flood-sidebar').classList.remove('sidebar-visible');
-    resetHighlights(); // Now safely restores all marker visibility
+    resetHighlights();
 }
 
 function toggleMenu(open = null) {
@@ -495,14 +697,11 @@ function updateMapStatuses() {
             map.getSource('barangays').setData(geoData);
         }
     }
-
     barangayMarkers.forEach(m => {
         const status = statuses.find(s => s.barangayId === m.data.id);
         if (status) m.marker.setColor(window.NAGA_DATA.STATUS_COLORS[status.status].primary);
     });
-
     updateStatusCounter();
-    // Re-apply current filter after status update
     const activeFilterBtn = document.querySelector('.filter-btn.active');
     const currentFilter = activeFilterBtn ? activeFilterBtn.dataset.status : 'all';
     filterByStatus(currentFilter);

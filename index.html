@@ -15,15 +15,18 @@
 <div id="map-container">
     <div id="map"></div>
 </div>
+
 <div id="left-menu" class="menu-hidden">
     <div class="menu-header">
         <h3>Naga Flood Monitor</h3>
         <button onclick="toggleMenu()" class="close-menu">×</button>
     </div>
+
     <div class="menu-search">
         <input id="map-search-input" type="text" placeholder="Search in Naga...">
         <button onclick="searchLocation()"><i class="fa-solid fa-search"></i></button>
     </div>
+
     <div class="menu-section">
         <h4><i class="fa-solid fa-filter"></i> Filter by Status</h4>
         <div class="status-filter-buttons">
@@ -33,10 +36,12 @@
             <button class="filter-btn" data-status="red">Red</button>
         </div>
     </div>
+
     <div class="menu-section">
         <h4><i class="fa-solid fa-list"></i> Barangays (1-27) <span onclick="toggleBarangayList()">▼</span></h4>
         <ul id="barangay-list"></ul>
     </div>
+
     <div class="menu-section">
         <h4><i class="fa-solid fa-circle-info"></i> Flood Alert Legend</h4>
         <div class="legend">
@@ -45,14 +50,26 @@
             <div class="legend-item"><span class="legend-color red"></span> Red: Critical - Evacuate</div>
         </div>
     </div>
+
     <div class="menu-section">
         <h4><i class="fa-solid fa-map-marked-alt"></i> Map Features Legend</h4>
         <div class="legend">
             <div class="legend-item"><span class="legend-color" style="background: #1E90FF;"></span> Waterways: Naga River</div>
             <div class="legend-item"><span class="legend-color" style="background: #A9A9A9;"></span> Hillshade: Terrain</div>
             <div class="legend-item"><span class="legend-color" style="background: #8B4513;"></span> Contours: Elevation</div>
+            <div class="legend-item"><span class="legend-color" style="background: linear-gradient(to right, green, yellow, red);"></span> DTM Elevation (0–50m)</div>
+            <div class="legend-item"><span class="legend-color" style="background: linear-gradient(to right, white, black);"></span> Slope (0–15°)</div>
         </div>
     </div>
+
+    <div class="menu-section">
+        <h4><i class="fa-solid fa-layer-group"></i> Terrain Overlays</h4>
+        <div class="layer-toggles">
+            <label><input type="checkbox" id="toggle-dtm" checked> DTM Elevation</label>
+            <label><input type="checkbox" id="toggle-slope"> Slope (Steepness)</label>
+        </div>
+    </div>
+
     <div class="menu-section">
         <h4><i class="fa-solid fa-map"></i> Basemap</h4>
         <div class="basemap-controls">
@@ -62,6 +79,7 @@
         </div>
     </div>
 </div>
+
 <div id="flood-sidebar" class="sidebar-hidden">
     <div class="sidebar-header">
         <h2 id="sidebar-title">Details</h2>
@@ -69,7 +87,9 @@
     </div>
     <div id="sidebar-content"></div>
 </div>
+
 <div id="toast" class="toast" style="display: none;"></div>
+
 <script src="data.js"></script>
 <script src="script.js"></script>
 </body>

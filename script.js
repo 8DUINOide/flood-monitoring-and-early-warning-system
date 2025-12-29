@@ -68,8 +68,8 @@ const BARANGAY_NAME_MAP = {
 let statuses = [...window.NAGA_DATA.initialStatuses];
 
 // Google Earth Engine Tile URLs (visualized with your palettes)
-const DTM_TILE_URL = 'https://earthengine.googleapis.com/v1/projects/floodmonitor-482303/maps/74a756330b2519764939472db2bafee4-3e0859fbb8d20b6c365a9fb02836208d/tiles/{z}/{x}/{y}';
-const SLOPE_TILE_URL = 'https://earthengine.googleapis.com/v1/projects/floodmonitor-482303/maps/e11f538e813eea5a699de452b6e14c9f-69635178c5f994fe6c90b18fda6048c1/tiles/{z}/{x}/{y}';
+const DTM_TILE_URL = 'https://earthengine.googleapis.com/v1/projects/floodmonitor-482303/maps/74a756330b2519764939472db2bafee4-9c629371e37d945a4c6c662237c8bb58/tiles/{z}/{x}/{y}';
+const SLOPE_TILE_URL = 'https://earthengine.googleapis.com/v1/projects/floodmonitor-482303/maps/e11f538e813eea5a699de452b6e14c9f-b06c5f750530856f1f2de5aca3c8a910/tiles/{z}/{x}/{y}';
 
 // Visualization parameters from your EE script
 const dtmVis = {min: 0, max: 50, palette: ['#008000', '#ffff00', '#ff0000']}; // green, yellow, red

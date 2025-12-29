@@ -55,3 +55,200 @@ Here's a list of the 27 barangays in Naga City:
 
 
 I manually search the location of the 27 barangay in google maps, So you can now use the data of it to create a more accurate Map for our flood monitoring.
+
+
+Here's a list of the 27 barangays in Naga City:
+1. Abella : 
+Coordinates:
+123.181757, 13.623952
+
+Elevation (m): 3.50
+Slope (°): 3.75
+
+2. Bagumbayan Norte: 
+Coordinates:
+123.185168, 13.635837
+
+Elevation (m): 3.50
+Slope (°): 0.60
+
+3. Bagumbayan Sur : 
+Coordinates:
+123.184466, 13.631554
+
+Elevation (m): 4.00
+Slope (°): 2.25
+
+4. Balatas : 
+Coordinates:
+123.206882, 13.630851
+
+Elevation (m): 10.50
+Slope (°): 0.30
+
+5. Calauag : 
+Coordinates:
+123.190746, 13.641315
+
+Elevation (m): 5.00
+Slope (°): 1.05
+
+6. Cararayan :  
+Coordinates:
+123.244827, 13.633913
+
+Elevation (m): 43.50
+Slope (°): 10.65
+
+7. Carolina : 
+Coordinates:
+123.286883, 13.660083
+
+Elevation (m): No data available
+Slope (°): No data available
+
+8. Concepcion Grande : 
+Coordinates:
+123.222313, 13.622363
+
+Elevation (m): 17.00
+Slope (°): 15.00
+
+9. Concepcion Pequeña : 
+Coordinates:
+123.204059, 13.619806
+
+Elevation (m): 9.00
+Slope (°): 3.75
+
+10. Dayangdang : 
+Coordinates:
+123.195707, 13.627601
+
+Elevation (m): 5.00
+Slope (°): 0.75
+
+11. Del Rosario : 
+Coordinates:
+123.239188, 13.619731
+
+Elevation (m): 30.50
+Slope (°): 1.50
+
+12. Dinaga : 
+Coordinates:
+123.185348, 13.622347
+
+Elevation (m): 3.50
+Slope (°): 1.05
+
+13. Igualdad : 
+Coordinates:
+123.181899, 13.622118
+
+Elevation (m): 3.00
+Slope (°): 2.10
+
+14. Lerma : 
+Coordinates:
+123.188244, 13.622785
+
+Elevation (m): 3.50
+Slope (°): 0.75
+
+15. Liboton : 
+Coordinates:
+123.192044, 13.636357
+
+Elevation (m): 5.50
+Slope (°): 6.15
+
+16. Mabolo : 
+Coordinates:
+123.181505, 13.614444
+
+Elevation (m): 2.50
+Slope (°): 1.05
+
+17. Pacol : 
+Coordinates:
+123.252995, 13.655479
+
+Elevation (m): No data available
+Slope (°): No data available
+
+18. Panicuason : 
+Coordinates:
+123.331770, 13.663881
+
+Elevation (m): No data available
+Slope (°): No data available
+
+19. Peñafrancia : 
+Coordinates:
+123.192596, 13.633144
+
+Elevation (m): 6.00
+Slope (°): 2.40
+
+20. Sabang : 
+Coordinates:
+123.179569, 13.619439
+
+Elevation (m): 3.00
+Slope (°): 0.00
+
+21. San Felipe : 
+Coordinates:
+123.211053, 13.644011
+
+Elevation (m): 12.50
+Slope (°): 1.80
+
+22. San Francisco :  
+Coordinates:
+123.187520, 13.625790
+
+Elevation (m): 4.00
+Slope (°): 0.75
+
+23. San Isidro :  
+Coordinates:
+123.265825, 13.629491
+
+Elevation (m): No data available
+Slope (°): No data available
+
+24. Santa Cruz : 
+Coordinates:
+123.184230, 13.626724
+
+Elevation (m): 3.50
+Slope (°): 2.70
+
+25. Tabuco : 
+Coordinates:
+123.186488, 13.615660
+
+Elevation (m): 4.50
+Slope (°): 7.05
+
+26. Tinago : 
+Coordinates:
+123.192044, 13.624770
+
+Elevation (m): 3.50
+Slope (°): 1.35
+
+27. Triangulo : 
+Coordinates:
+123.192832, 13.617779
+
+Elevation (m): 3.00
+Slope (°): 1.35
+
+4 No data available barangays :
+1. Carolina
+2. Pacol
+3. Panicuason
+4. San Isidro

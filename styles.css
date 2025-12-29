@@ -1,5 +1,4 @@
 /* styles.css */
-/* styles.css (minor additions for new elements) */
 body, html {
     margin: 0;
     padding: 0;
@@ -30,18 +29,6 @@ body, html {
 
 #hamburger:hover {
     background: rgba(0, 58, 108, 1);
-}
-
-#sim-status {
-    position: fixed;
-    top: 20px;
-    right: 20px;
-    background: rgba(0, 58, 108, 0.9);
-    color: white;
-    padding: 10px;
-    border-radius: 4px;
-    z-index: 1000;
-    font-size: 0.9em;
 }
 
 #left-menu {
@@ -202,41 +189,24 @@ body, html {
     background: #ef4444;
 }
 
-.sim-controls button {
-    width: 100%;
-    padding: 10px;
-    margin: 0.5rem 0;
-    background: #003A6C;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
+.legend-conditions {
+    margin-top: 1rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid #e5e7eb;
 }
 
-.sim-controls button:disabled {
-    background: #aaa;
-    cursor: not-allowed;
+.legend-conditions h5 {
+    margin: 0 0 0.5rem;
+    font-size: 0.85em;
+    color: #6b7280;
+    font-weight: 600;
 }
 
-.speed-control {
-    margin-top: 0.5rem;
-    display: flex;
-    align-items: center;
-    gap: 5px;
-}
-
-.speed-control label {
-    margin-right: 10px;
-    font-size: 0.9em;
-}
-
-.speed-control input {
-    flex: 1;
-}
-
-#speed-value {
-    min-width: 30px;
-    font-weight: bold;
+.legend-item-small {
+    font-size: 0.8em;
+    color: #4b5563;
+    margin: 0.35rem 0;
+    padding-left: 0.5rem;
 }
 
 .basemap-controls {
@@ -315,7 +285,7 @@ body, html {
     color: #333;
 }
 
-.status-badge, .alert-level {
+.status-badge {
     padding: 0.25rem 0.5rem;
     border-radius: 20px;
     font-weight: bold;
@@ -332,10 +302,6 @@ body, html {
 
 .status-red {
     background: #ef4444;
-}
-
-.alert-level {
-    text-transform: uppercase;
 }
 
 .sensor-section {
@@ -356,15 +322,6 @@ body, html {
     justify-content: space-between;
     margin: 0.25rem 0;
     font-size: 0.9em;
-}
-
-.color-swatch {
-    width: 20px;
-    height: 20px;
-    border-radius: 50%;
-    border: 1px solid #ccc;
-    display: inline-block;
-    margin-left: 0.5rem;
 }
 
 #toast {
@@ -453,7 +410,7 @@ body, html {
 
 .info-value.action-text {
     font-weight: bold;
-    color: #000000; /* black for all actions */
+    color: #000000;
     line-height: 1.4;
 }
 
@@ -496,7 +453,6 @@ body, html {
     background: #ef4444;
 }
 
-/* Status Counter in Left Menu */
 .status-counter {
     padding: 14px 18px;
     background: #f8fafc;
@@ -526,7 +482,6 @@ body, html {
     font-weight: 500;
 }
 
-/* Highlighted marker black rectangle outline */
 .barangay-marker.highlight svg {
     filter: drop-shadow(0 0 0 black);
 }
@@ -535,26 +490,6 @@ body, html {
     z-index: 10 !important;
 }
 
-/* Layer Toggles in Left Menu */
-.layer-toggles {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    padding: 8px 0;
-}
-
-.layer-toggles label {
-    display: flex;
-    align-items: center;
-    font-size: 0.95em;
-    cursor: pointer;
-    user-select: none;
-    color: #333;
-}
-
-.layer-toggles input[type="checkbox"] {
-    margin-right: 10px;
-    width: 18px;
-    height: 18px;
-    accent-color: #003A6C;
+.hidden {
+    display: none;
 }

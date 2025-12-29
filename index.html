@@ -15,18 +15,15 @@
 <div id="map-container">
     <div id="map"></div>
 </div>
-
 <div id="left-menu" class="menu-hidden">
     <div class="menu-header">
         <h3>Naga Flood Monitor</h3>
         <button onclick="toggleMenu()" class="close-menu">×</button>
     </div>
-
     <div class="menu-search">
         <input id="map-search-input" type="text" placeholder="Search in Naga...">
         <button onclick="searchLocation()"><i class="fa-solid fa-search"></i></button>
     </div>
-
     <div class="menu-section">
         <h4><i class="fa-solid fa-filter"></i> Filter by Status</h4>
         <div class="status-filter-buttons">
@@ -36,12 +33,10 @@
             <button class="filter-btn" data-status="red">Red</button>
         </div>
     </div>
-
     <div class="menu-section">
         <h4><i class="fa-solid fa-list"></i> Barangays (1-27) <span onclick="toggleBarangayList()">▼</span></h4>
         <ul id="barangay-list"></ul>
     </div>
-
     <div class="menu-section">
         <h4><i class="fa-solid fa-circle-info"></i> Flood Alert Legend</h4>
         <div class="legend">
@@ -49,11 +44,13 @@
             <div class="legend-item"><span class="legend-color yellow"></span> Yellow: Prepare</div>
             <div class="legend-item"><span class="legend-color red"></span> Red: Critical - Evacuate</div>
         </div>
+        <div class="legend-conditions">
+            <h5>Status Conditions:</h5>
+            <div class="legend-item-small">• Water <0.5m & Rain <7.5mm/hr</div>
+            <div class="legend-item-small">• Water 0.5–1.0m or Rain 7.5–30mm/hr</div>
+            <div class="legend-item-small">• Water >1.0m or Rain >30mm/hr</div>
+        </div>
     </div>
-
-    <!-- REMOVED: Map Features Legend -->
-    <!-- REMOVED: Terrain Overlays (checkboxes) -->
-
     <div class="menu-section">
         <h4><i class="fa-solid fa-map"></i> Basemap</h4>
         <div class="basemap-controls">
@@ -63,7 +60,6 @@
         </div>
     </div>
 </div>
-
 <div id="flood-sidebar" class="sidebar-hidden">
     <div class="sidebar-header">
         <h2 id="sidebar-title">Details</h2>
@@ -71,9 +67,8 @@
     </div>
     <div id="sidebar-content"></div>
 </div>
-
 <div id="toast" class="toast" style="display: none;"></div>
-
+<script src="config.js"></script>
 <script src="data.js"></script>
 <script src="script.js"></script>
 </body>

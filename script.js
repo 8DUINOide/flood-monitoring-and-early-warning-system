@@ -3,8 +3,6 @@ let map, barangayMarkers = [], highlightedMarker = null, highlightedFeatureId = 
 let highlightedListItem = null;
 let geoData = null;
 
-const MAPBOX_TOKEN = 'pk.eyJ1IjoiYWxmcmFuY2lzYnA0IiwiYSI6ImNtajloOW4zYzBjYTAzZHNiaHVuc2V1dWUifQ.m_UdZu36KHAKXu8-3TXElQ';
-
 const BARANGAY_COLORS = {
     'abella': '#FFB6C1',
     'bagumbayan_norte': '#98FB98',
@@ -67,13 +65,9 @@ const BARANGAY_NAME_MAP = {
 
 let statuses = [...window.NAGA_DATA.initialStatuses];
 
-// Google Earth Engine Tile URLs (visualized with your palettes)
-const DTM_TILE_URL = 'https://earthengine.googleapis.com/v1/projects/floodmonitor-482303/maps/74a756330b2519764939472db2bafee4-9c629371e37d945a4c6c662237c8bb58/tiles/{z}/{x}/{y}';
-const SLOPE_TILE_URL = 'https://earthengine.googleapis.com/v1/projects/floodmonitor-482303/maps/e11f538e813eea5a699de452b6e14c9f-b06c5f750530856f1f2de5aca3c8a910/tiles/{z}/{x}/{y}';
-
-// Visualization parameters from your EE script
-const dtmVis = {min: 0, max: 50, palette: ['#008000', '#ffff00', '#ff0000']}; // green, yellow, red
-const slopeVis = {min: 0, max: 15, palette: ['#ffffff', '#000000']}; // white, black
+// Visualization parameters from EE script
+const dtmVis = {min: 0, max: 50, palette: ['#008000', '#ffff00', '#ff0000']};
+const slopeVis = {min: 0, max: 15, palette: ['#ffffff', '#000000']};
 
 // Helper function to convert hex to RGB array
 function hexToRgb(hex) {
@@ -88,7 +82,7 @@ function hexToRgb(hex) {
 
 // Async function to get approximate value at point by sampling tile color and interpolating
 async function getValueAtPoint(lon, lat, tileUrl, visParams) {
-    const zoom = 18; // High zoom for better precision
+    const zoom = 18;
     const n = Math.pow(2, zoom);
     const xtile = Math.floor(n * ((lon + 180) / 360));
     let siny = Math.sin(lat * Math.PI / 180);
@@ -107,22 +101,18 @@ async function getValueAtPoint(lon, lat, tileUrl, visParams) {
         const ctx = canvas.getContext('2d');
         ctx.drawImage(img, 0, 0);
 
-        // Calculate pixel position within the tile
         const mercX = n * ((lon + 180) / 360);
         const sinLat = Math.sin(lat * Math.PI / 180);
         const mercY = n * (0.5 - Math.log((1 + sinLat) / (1 - sinLat)) / (4 * Math.PI));
         const px = Math.floor((mercX - xtile) * 256);
         const py = Math.floor((mercY - ytile) * 256);
-
         const pixelData = ctx.getImageData(px, py, 1, 1).data;
-        if (pixelData[3] < 128) return null; // Semi-transparent or transparent = no data
+
+        if (pixelData[3] < 128) return null;
 
         const [r, g, b] = pixelData;
-
-        // Parse palette to RGB
         const paletteRGB = visParams.palette.map(hexToRgb);
 
-        // Function to interpolate color at normalized t (0 to 1)
         function interpColor(t) {
             const pos = t * (paletteRGB.length - 1);
             const i = Math.floor(pos);
@@ -136,7 +126,6 @@ async function getValueAtPoint(lon, lat, tileUrl, visParams) {
             ];
         }
 
-        // Find best t by minimizing distance (sample 100 points)
         let bestT = 0;
         let bestDist = Infinity;
         const steps = 100;
@@ -150,7 +139,7 @@ async function getValueAtPoint(lon, lat, tileUrl, visParams) {
             }
         }
 
-        if (bestDist > 100) return null; // Too far from palette, likely no data
+        if (bestDist > 100) return null;
 
         const value = visParams.min + bestT * (visParams.max - visParams.min);
         return value;
@@ -197,7 +186,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 function initMap() {
-    mapboxgl.accessToken = MAPBOX_TOKEN;
+    mapboxgl.accessToken = window.CONFIG.MAPBOX_TOKEN;
     const { NAGA_CITY_CENTER } = window.NAGA_DATA;
 
     map = new mapboxgl.Map({
@@ -221,33 +210,20 @@ function initMap() {
             const marker = new mapboxgl.Marker({ color, draggable: false })
                 .setLngLat([barangay.lng, barangay.lat])
                 .addTo(map);
+
             marker.getElement().classList.add('barangay-marker');
             marker.getElement().addEventListener('click', () => {
                 selectBarangay(barangay, marker, id, barangay.id);
             });
+
             barangayMarkers.push({ marker, data: barangay, id, featureId: barangay.id, color, listIndex: index });
         });
-
-        // Terrain overlay toggles
-        const dtmToggle = document.getElementById('toggle-dtm');
-        const slopeToggle = document.getElementById('toggle-slope');
-        if (dtmToggle) {
-            dtmToggle.addEventListener('change', (e) => {
-                map.setLayoutProperty('dtm-layer', 'visibility', e.target.checked ? 'visible' : 'none');
-            });
-        }
-        if (slopeToggle) {
-            slopeToggle.addEventListener('change', (e) => {
-                map.setLayoutProperty('slope-layer', 'visibility', e.target.checked ? 'visible' : 'none');
-            });
-        }
 
         // Click to get DTM data at point
         map.on('click', async (e) => {
             const lng = e.lngLat.lng;
             const lat = e.lngLat.lat;
 
-            // Show loading popup
             const popup = new mapboxgl.Popup({ closeOnClick: true })
                 .setLngLat(e.lngLat)
                 .setHTML(`
@@ -261,8 +237,8 @@ function initMap() {
 
             try {
                 const [elevation, slope] = await Promise.all([
-                    getValueAtPoint(lng, lat, DTM_TILE_URL, dtmVis),
-                    getValueAtPoint(lng, lat, SLOPE_TILE_URL, slopeVis)
+                    getValueAtPoint(lng, lat, window.CONFIG.DTM_TILE_URL, dtmVis),
+                    getValueAtPoint(lng, lat, window.CONFIG.SLOPE_TILE_URL, slopeVis)
                 ]);
 
                 const elevStr = elevation !== null ? elevation.toFixed(2) : 'No data available';
@@ -285,9 +261,7 @@ function initMap() {
             }
         });
 
-        // Change cursor to indicate clickable map
         map.getCanvas().style.cursor = 'pointer';
-
         map.resize();
     });
 }
@@ -309,6 +283,7 @@ function addCustomLayers() {
             source: 'barangays',
             paint: { 'line-color': ['get', 'color'], 'line-width': 1, 'line-opacity': 0.5 }
         });
+
         if (!highlightedFeatureId) {
             const bounds = new mapboxgl.LngLatBounds();
             geoData.features.forEach(f => {
@@ -376,7 +351,7 @@ function addCustomLayers() {
     if (!map.getSource('dtm-source')) {
         map.addSource('dtm-source', {
             type: 'raster',
-            tiles: [DTM_TILE_URL],
+            tiles: [window.CONFIG.DTM_TILE_URL],
             tileSize: 256
         });
         map.addLayer({
@@ -384,14 +359,14 @@ function addCustomLayers() {
             type: 'raster',
             source: 'dtm-source',
             paint: { 'raster-opacity': 0.6 },
-            layout: { 'visibility': document.getElementById('toggle-dtm').checked ? 'visible' : 'none' }
+            layout: { 'visibility': 'none' }
         });
     }
 
     if (!map.getSource('slope-source')) {
         map.addSource('slope-source', {
             type: 'raster',
-            tiles: [SLOPE_TILE_URL],
+            tiles: [window.CONFIG.SLOPE_TILE_URL],
             tileSize: 256
         });
         map.addLayer({
@@ -399,14 +374,16 @@ function addCustomLayers() {
             type: 'raster',
             source: 'slope-source',
             paint: { 'raster-opacity': 0.6 },
-            layout: { 'visibility': document.getElementById('toggle-slope').checked ? 'visible' : 'none' }
+            layout: { 'visibility': 'none' }
         });
     }
 }
 
 function selectBarangay(barangay, marker, id, featureId, fromList = false) {
     map.flyTo({ center: [barangay.lng, barangay.lat], zoom: 15, duration: 1000 });
+
     resetHighlights();
+
     if (marker) {
         const el = marker.getElement();
         el.classList.add('highlight');
@@ -415,12 +392,14 @@ function selectBarangay(barangay, marker, id, featureId, fromList = false) {
         el.style.zIndex = '10';
         highlightedMarker = { marker, originalColor: BARANGAY_COLORS[featureId] || '#808080' };
     }
+
     const brighter = brightenColor(BARANGAY_COLORS[featureId] || '#808080');
     map.setPaintProperty('barangay-boundaries', 'fill-opacity', ['case', ['==', ['get', 'barangayId'], featureId], 0.6, 0.2]);
     map.setPaintProperty('barangay-boundaries', 'fill-color', ['case', ['==', ['get', 'barangayId'], featureId], brighter, ['get', 'statusColor']]);
     map.setPaintProperty('barangay-outlines', 'line-width', ['case', ['==', ['get', 'barangayId'], featureId], 3, 1]);
     map.setPaintProperty('barangay-outlines', 'line-color', ['case', ['==', ['get', 'barangayId'], featureId], '#003A6C', ['get', 'color']]);
     highlightedFeatureId = featureId;
+
     const listItems = document.querySelectorAll('#barangay-list li');
     const targetIndex = window.NAGA_DATA.barangays.findIndex(b => b.id === barangay.id);
     if (targetIndex !== -1) {
@@ -429,6 +408,7 @@ function selectBarangay(barangay, marker, id, featureId, fromList = false) {
         listItem.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         highlightedListItem = listItem;
     }
+
     showFloodSidebar(barangay, id, BARANGAY_COLORS[featureId] || '#808080');
     if (!fromList) toggleMenu(true);
 }
@@ -442,6 +422,7 @@ function resetHighlights() {
         el.style.zIndex = '';
         highlightedMarker = null;
     }
+
     if (map.getLayer('barangay-boundaries')) {
         map.setPaintProperty('barangay-boundaries', 'fill-opacity', 0.2);
         map.setPaintProperty('barangay-boundaries', 'fill-color', ['get', 'statusColor']);
@@ -449,11 +430,12 @@ function resetHighlights() {
         map.setPaintProperty('barangay-outlines', 'line-color', ['get', 'color']);
         highlightedFeatureId = null;
     }
+
     if (highlightedListItem) {
         highlightedListItem.classList.remove('list-highlight');
         highlightedListItem = null;
     }
-    // Re-apply current filter to restore correct marker visibility
+
     const activeFilterBtn = document.querySelector('.filter-btn.active');
     const currentFilter = activeFilterBtn ? activeFilterBtn.dataset.status : 'all';
     filterByStatus(currentFilter);
@@ -466,7 +448,7 @@ function brightenColor(hex) {
     return `#${r}${g}${b}`;
 }
 
-function showFloodSidebar(barangay, id, color) {
+function showFloodSidebar(barangay, id) {
     document.getElementById('sidebar-title').textContent = `${barangay.name} (#${id})`;
     updateSidebar(barangay);
     document.getElementById('flood-sidebar').classList.add('sidebar-visible');
@@ -474,11 +456,10 @@ function showFloodSidebar(barangay, id, color) {
 
 function updateSidebar(barangay) {
     const status = statuses.find(s => s.barangayId === barangay.id);
-    const statusColor = window.NAGA_DATA.STATUS_COLORS[status.status].primary;
     const badgeClass = `status-${status.status}`;
     const label = window.NAGA_DATA.STATUS_COLORS[status.status].label;
     const action = window.NAGA_DATA.ALERT_ACTIONS[status.alertLevel];
-    const color = BARANGAY_COLORS[barangay.id];
+
     document.getElementById('sidebar-content').innerHTML = `
         <h3>Status: <span class="status-badge ${badgeClass}">${status.status.toUpperCase()}</span></h3>
         <div class="info-section">
@@ -504,26 +485,16 @@ function updateSidebar(barangay) {
             <div class="info-row"><span>Wind Speed:</span> <span class="editable" data-field="windSpeed" data-unit=" m/s">${status.windSpeed.toFixed(1)} m/s</span></div>
             <div class="info-row"><span>Wind Direction:</span> <span class="editable" data-field="windDirection" data-unit=" °">${status.windDirection} °</span></div>
         </div>
-        <div class="info-row"><span>Elevation:</span> <span>${barangay.elevation} m</span></div>
-        <div class="info-row"><span>Flood Risk:</span> <span>${barangay.floodRisk}</span></div>
-        <div class="info-row"><span>Base Color:</span> <span><div class="color-swatch" style="background: ${color};"></div>${color}</span></div>
-        <div class="info-row"><span>Last Update:</span> <span>${status.timestamp.toLocaleTimeString()}</span></div>
         <button id="edit-save-btn" class="edit-btn">Edit</button>
-        <div class="menu-section">
-            <h4><i class="fa-solid fa-circle-info"></i> Flood Status Conditions</h4>
-            <div class="legend">
-                <div class="legend-item"><span class="legend-color green"></span> Water <0.5m & Rain <7.5mm/hr</div>
-                <div class="legend-item"><span class="legend-color yellow"></span> Water 0.5–1.0m or Rain 7.5–30mm/hr</div>
-                <div class="legend-item"><span class="legend-color red"></span> Water >1.0m or Rain >30mm/hr</div>
-            </div>
-        </div>
     `;
+
     document.getElementById('edit-save-btn').onclick = () => toggleEdit(barangay);
 }
 
 function toggleEdit(barangay) {
     const btn = document.getElementById('edit-save-btn');
     const status = statuses.find(s => s.barangayId === barangay.id);
+
     if (btn.textContent === 'Edit') {
         btn.textContent = 'Save';
         document.querySelectorAll('#sidebar-content .editable').forEach(span => {
@@ -545,6 +516,7 @@ function toggleEdit(barangay) {
                 span.innerHTML = `${newValue.toFixed(fixed)}${unit}`;
             }
         });
+
         Object.assign(status, updates);
         status.timestamp = new Date();
         calculateStatus(status, barangay);
@@ -555,21 +527,25 @@ function toggleEdit(barangay) {
     }
 }
 
-function calculateStatus(status, barangay) {
+function calculateStatus(status) {
     let waterStatus = 'green';
     if (status.waterLevel >= window.NAGA_DATA.ALERT_THRESHOLDS.waterLevel.greenToYellow) waterStatus = 'yellow';
     if (status.waterLevel >= window.NAGA_DATA.ALERT_THRESHOLDS.waterLevel.yellowToRed) waterStatus = 'red';
+
     let rainStatus = 'green';
     if (status.rainfallIntensity >= window.NAGA_DATA.ALERT_THRESHOLDS.rainfall.greenToYellow) rainStatus = 'yellow';
     if (status.rainfallIntensity >= window.NAGA_DATA.ALERT_THRESHOLDS.rainfall.yellowToRed) rainStatus = 'red';
+
     const statusLevels = { green: 0, yellow: 1, red: 2 };
     const maxLevel = Math.max(statusLevels[waterStatus], statusLevels[rainStatus]);
     const newStatus = Object.keys(statusLevels).find(key => statusLevels[key] === maxLevel);
+
     if (newStatus !== status.status) {
         status.status = newStatus;
         status.timeInCurrentStatus = 0;
         status.alertLevel = newStatus === 'green' ? 'safe' : newStatus === 'yellow' ? 'prepare' : 'evacuate';
     }
+
     if (status.status === 'red' && status.timeInCurrentStatus > window.NAGA_DATA.ALERT_THRESHOLDS.escalationTime.redToEvacuate) {
         status.alertLevel = 'forced_evacuation';
     }
@@ -578,6 +554,7 @@ function calculateStatus(status, barangay) {
 function updateStatusCounter() {
     const counts = { green: 0, yellow: 0, red: 0 };
     statuses.forEach(s => counts[s.status]++);
+
     let statusCounterDiv = document.getElementById('status-counter');
     if (!statusCounterDiv) {
         statusCounterDiv = document.createElement('div');
@@ -588,6 +565,7 @@ function updateStatusCounter() {
             menuHeader.parentNode.insertBefore(statusCounterDiv, menuHeader.nextSibling);
         }
     }
+
     statusCounterDiv.innerHTML = `
         <div class="counter-item" data-status="green">
             <i class="fa-solid fa-circle" style="color: #10b981;"></i>
@@ -625,6 +603,7 @@ function generateBarangayList() {
     list.classList.add('hidden');
     const { barangays } = window.NAGA_DATA;
     list.innerHTML = '';
+
     barangays.forEach((b, i) => {
         const li = document.createElement('li');
         const color = BARANGAY_COLORS[b.id] || '#808080';
@@ -641,7 +620,8 @@ function generateBarangayList() {
 function searchLocation() {
     const query = document.getElementById('map-search-input').value.trim();
     if (!query) return;
-    fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?access_token=${MAPBOX_TOKEN}&country=PH&limit=1`)
+
+    fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?access_token=${window.CONFIG.MAPBOX_TOKEN}&country=PH&limit=1`)
         .then(res => res.json())
         .then(data => {
             if (data.features[0]) {
@@ -674,11 +654,13 @@ function filterByStatus(val) {
         const shouldShow = (val === 'all' || status === val);
         m.marker.getElement().style.display = shouldShow ? 'block' : 'none';
     });
+
     if (val === 'all') {
         map.setPaintProperty('barangay-boundaries', 'fill-opacity', 0.2);
     } else {
         map.setPaintProperty('barangay-boundaries', 'fill-opacity', ['case', ['==', ['get', 'status'], val], 0.6, 0]);
     }
+
     document.querySelectorAll('.filter-btn').forEach(btn => {
         btn.classList.toggle('active', btn.dataset.status === val);
     });
@@ -693,15 +675,19 @@ function updateMapStatuses() {
                 feature.properties.statusColor = window.NAGA_DATA.STATUS_COLORS[statusObj.status].primary;
             }
         });
+
         if (map.getSource('barangays')) {
             map.getSource('barangays').setData(geoData);
         }
     }
+
     barangayMarkers.forEach(m => {
         const status = statuses.find(s => s.barangayId === m.data.id);
         if (status) m.marker.setColor(window.NAGA_DATA.STATUS_COLORS[status.status].primary);
     });
+
     updateStatusCounter();
+
     const activeFilterBtn = document.querySelector('.filter-btn.active');
     const currentFilter = activeFilterBtn ? activeFilterBtn.dataset.status : 'all';
     filterByStatus(currentFilter);
